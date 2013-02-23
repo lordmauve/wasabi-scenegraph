@@ -61,7 +61,7 @@ class Mesh(object):
         self.texcoords = texcoords
         self.indices = indices
 
-    def to_list(self, batch):
+    def to_list(self, batch, group=None):
         l = len(self.vertices) / 3
 
         data = [
@@ -77,7 +77,7 @@ class Mesh(object):
         self.list = batch.add_indexed(
             l,
             self.mode,
-            None,
+            group,
             self.indices,
             *data
         )
