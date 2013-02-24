@@ -6,6 +6,7 @@
 #
 
 from pyglet.gl import *
+from ctypes import *
 
 
 class Shader:

@@ -95,7 +95,7 @@ class Camera(object):
     matrixes.
 
     """
-    def __init__(self, pos=v3((0, 15, 15)), look_at=v3((0, 0, 0)), aspect=1.3333333333, fov=90.0):
+    def __init__(self, pos=v3((0, 15, 15)), look_at=v3((0, 0, 0)), aspect=1.3333333333, fov=90.0 / 1.333333):
         self.aspect = aspect
         self.fov = fov
         self.pos = pos

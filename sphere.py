@@ -1,0 +1,81 @@
+import math
+from objloader import Mesh
+
+from pyglet.gl import GL_TRIANGLES
+
+
+class Sphere(Mesh):
+    """Construct a Mesh that is a 3D UV sphere."""
+
+    def __init__(self,
+            radius=1,
+            latitude_divisions=20,
+            longitude_divisions=40):
+        self.radius = radius
+        self.latitude_divisions = latitude_divisions
+        self.longitude_divisions = longitude_divisions
+
+        vs = []
+        ns = []
+        uvs = []
+        tangents = []
+
+        for lat in xrange(latitude_divisions + 1):
+            # angle of latitude, where 0 is the north pole and pi is south
+            theta = lat * math.pi / latitude_divisions
+            sintheta = math.sin(theta)
+            costheta = math.cos(theta)
+
+            for lng in xrange(longitude_divisions + 1):
+                phi = lng * 2 * math.pi / longitude_divisions
+                sinphi = math.sin(phi)
+                cosphi = math.cos(phi)
+
+                x = cosphi * sintheta
+                y = costheta
+                z = sinphi * sintheta
+
+                u = 1 - (float(lng) / longitude_divisions)
+                v = 1 - (float(lat) / latitude_divisions)
+
+                ns.extend([x, y, z])
+                uvs.extend([u, v])
+                vs.extend([x * radius, y * radius, z * radius])
+                tangents.extend([-sinphi, 0, cosphi])
+
+        indexes = []
+        for lat in xrange(latitude_divisions):
+            for lng in xrange(longitude_divisions):
+                i = lat * (longitude_divisions + 1) + lng
+                j = i + longitude_divisions + 1
+
+                indexes.extend([
+                    i, j,
+                    i + 1,
+                    j,
+                    j + 1,
+                    i + 1
+                ])
+
+        super(Sphere, self).__init__(
+            GL_TRIANGLES,
+            vertices=vs,
+            normals=ns,
+            texcoords=uvs,
+            indices=indexes,
+            material=None,
+            name=repr(self)
+        )
+
+    def __repr__(self):
+        return (
+            'Sphere('
+            '%(radius)r, '
+            '%(latitude_divisions)r, '
+            '%(longitude_divisions)r)' % self.__dict__
+        )
+
+
+# Create an alias in case users want to differentiate from other ways of
+# tesselating a sphere
+UVSphere = Sphere

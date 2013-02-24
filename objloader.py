@@ -1,4 +1,3 @@
-import pygame
 from collections import namedtuple
 from pyglet.gl import *
 
@@ -8,6 +7,7 @@ class Material(object):
         self.contents = contents
 
     def load_textures(self):
+        import pygame
         surf = pygame.image.load(mtl['filename'])
         image = pygame.image.tostring(surf, 'RGBA', 1)
         ix, iy = surf.get_rect().size
@@ -81,6 +81,9 @@ class Mesh(object):
             self.indices,
             *data
         )
+
+    def __repr__(self):
+        return '<Mesh %s>' % self.name
 
     @classmethod
     def load_obj(cls, filename, swapyz=False):
