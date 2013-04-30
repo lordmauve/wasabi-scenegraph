@@ -1,5 +1,5 @@
 import math
-from objloader import Mesh
+from objloader import Mesh, Material
 
 from pyglet.gl import GL_TRIANGLES
 
@@ -10,7 +10,10 @@ class Sphere(Mesh):
     def __init__(self,
             radius=1,
             latitude_divisions=20,
-            longitude_divisions=40):
+            longitude_divisions=40,
+            material=None):
+
+        material = material or Material(name='sphere_material')
         self.radius = radius
         self.latitude_divisions = latitude_divisions
         self.longitude_divisions = longitude_divisions
@@ -63,7 +66,7 @@ class Sphere(Mesh):
             normals=ns,
             texcoords=uvs,
             indices=indexes,
-            material=None,
+            material=material,
             name=repr(self)
         )
 

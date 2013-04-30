@@ -1,4 +1,9 @@
 syntax: glob
 *.pyc
 *.swp
-env
+*~
+*.orig
+demos/duel
+build
+dist
+wasabi.scenegraph.egg-info
