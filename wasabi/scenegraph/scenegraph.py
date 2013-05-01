@@ -6,6 +6,8 @@ from pyglet.graphics import Group
 from pyglet.gl import *
 from euclid import Matrix4, Point3, Vector3
 
+from .renderer import LightingAccumulationRenderer
+
 
 def v3(*args):
     if len(args) == 1:
@@ -60,36 +62,6 @@ class GLStateGroup(Group):
             glEnable(e)
         if self.depth_mask is not None:
             glDepthMask(GL_TRUE)
-
-
-class ShaderGroup(Group):
-    """A group that activates a Shader.
-
-    Lists created with this group will be the rendered with the shader enabled;
-    uniform variables can also be configured that will be applied whenever the
-    shader is bound.
-
-    """
-    def __init__(self, shader, parent=None):
-        super(ShaderGroup, self).__init__(parent)
-        self.shader = shader
-        self.uniforms = {}
-
-    def set_state(self):
-        self.shader.bind()
-        for name, args in self.uniforms.iteritems():
-            self.shader.uniformf(name, *args)
-        ShaderGroup.currentshader = self.shader
-
-    def uniformf(self, name, *args):
-        """Set a named uniform value.
-
-        This will be set when the shader is bound."""
-        self.uniforms[name] = args
-
-    def unset_state(self):
-        self.shader.unbind()
-        ShaderGroup.currentshader = None
 
 
 class ModelNode(object):
@@ -167,25 +139,6 @@ class RayNode(object):
             self.group.unset_state_recursive()
 
 
-class RenderPass(object):
-    """Base class for a render pass."""
-    def __init__(self, transparency=False, group=None):
-        self.transparency = transparency
-        self.group = group
-
-    def filter(self, node):
-        return self.transparency == node.is_transparent()
-
-    def render(self, camera, objects):
-        if self.group:
-            self.group.set_state_recursive()
-        for o in objects:
-            if self.filter(o):
-                o.draw(camera)
-        if self.group:
-            self.group.unset_state_recursive()
-
-
 class Scene(object):
     """A collection of scenegraph objects.
 
@@ -193,9 +146,16 @@ class Scene(object):
     future however it may support more sophisticated behaviour.
 
     """
-    def __init__(self, passes=[RenderPass()]):
+    def __init__(self,
+            ambient=(0, 0, 0, 0),
+            renderer=LightingAccumulationRenderer):
+
+        self.ambient = ambient
         self.objects = []
-        self.passes = passes
+        if callable(renderer):
+            self.renderer = renderer()
+        else:
+            self.renderer = renderer
 
     def clear(self):
         self.objects[:] = []
@@ -216,9 +176,7 @@ class Scene(object):
             o.update(dt)
 
     def render(self, camera):
-        for p in self.passes:
-            camera.set_matrix()
-            p.render(camera, self.objects)
+        self.renderer.render(self, camera)
 
 
 class Camera(object):

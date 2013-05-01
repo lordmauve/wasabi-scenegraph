@@ -271,3 +271,33 @@ class MaterialGroup(Group):
         if activeshader:
             activeshader.unset_material(self.mtl)
         super(MaterialGroup, self).unset_state()
+
+
+class ShaderGroup(Group):
+    """A group that activates a Shader.
+
+    Lists created with this group will be the rendered with the shader enabled;
+    uniform variables can also be configured that will be applied whenever the
+    shader is bound.
+
+    """
+    def __init__(self, shader, parent=None):
+        super(ShaderGroup, self).__init__(parent)
+        self.shader = shader
+        self.uniforms = {}
+
+    def set_state(self):
+        self.shader.bind()
+        for name, args in self.uniforms.iteritems():
+            self.shader.uniformf(name, *args)
+        ShaderGroup.currentshader = self.shader
+
+    def uniformf(self, name, *args):
+        """Set a named uniform value.
+
+        This will be set when the shader is bound."""
+        self.uniforms[name] = args
+
+    def unset_state(self):
+        self.shader.unbind()
+        ShaderGroup.currentshader = None

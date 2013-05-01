@@ -2,14 +2,12 @@ from __future__ import division
 
 import math
 import pyglet
-from pyglet import gl
 from pyglet.window import key
-from pyglet.graphics import TextureGroup
 
 from wasabi.scenegraph.sphere import Sphere
-from wasabi.scenegraph.scenegraph import Camera, Scene, v3, RenderPass, GLStateGroup, ModelNode
-from wasabi.scenegraph.objloader import ModelLoader, Model, Material
-from wasabi.scenegraph.lighting import DepthOnlyPass, LightingPass, Light, CompositePass
+from wasabi.scenegraph.scenegraph import Camera, Scene, v3, ModelNode
+from wasabi.scenegraph.objloader import Model, Material
+from wasabi.scenegraph.lighting import Light
 
 
 FPS = 60
@@ -82,13 +80,10 @@ def init_scene():
     """Set up the scene and place objects into it."""
     global scene, earth, moon, sunlight
     # Create a scene
-    lighting = LightingPass(
+
+    scene = Scene(
         ambient=(0.05, 0.05, 0.05, 1.0)
     )
-    scene = Scene([
-        lighting,
-        CompositePass(lighting),
-    ])
 
     # Set up objects in the scene
     sunlight = Light(
@@ -145,14 +140,6 @@ c = Camera(pos=v3((0, 0, -20)))
 
 
 def on_draw():
-    gl.glEnable(gl.GL_TEXTURE_2D)
-    gl.glClearColor(1.0, 0, 0, 0)
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-    gl.glDisable(gl.GL_CULL_FACE)
-    gl.glEnable(gl.GL_BLEND)
-    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-    gl.glEnable(gl.GL_ALPHA_TEST)
-    gl.glAlphaFunc(gl.GL_GREATER, 0.9)
     scene.render(c)
 
 
