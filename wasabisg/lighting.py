@@ -3,7 +3,7 @@ from gletools import (
     Projection, Framebuffer, Texture, Depthbuffer,
     interval, quad, Group, Matrix,
 )
-from gletools.gl import *
+from OpenGL.GL import *
 
 from euclid import Point3
 

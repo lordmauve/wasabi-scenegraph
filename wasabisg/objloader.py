@@ -1,5 +1,5 @@
 import os.path
-from pyglet.gl import *
+from OpenGL.GL import *
 import pyglet.graphics
 import pyglet.image
 

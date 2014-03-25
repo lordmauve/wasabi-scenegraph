@@ -1,7 +1,7 @@
 import math
 from objloader import Mesh, Material
 
-from pyglet.gl import GL_TRIANGLES
+from OpenGL.GL import GL_TRIANGLES
 
 
 class Sphere(Mesh):

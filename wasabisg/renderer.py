@@ -1,4 +1,4 @@
-from gletools import gl
+from OpenGL.GL import *
 from gletools import (
     Projection, Framebuffer, Texture, Depthbuffer,
     interval, quad, Group, Matrix,
@@ -145,11 +145,11 @@ class DepthOnlyPass(object):
         if not lights:
             return
 
-        gl.glEnable(gl.GL_ALPHA_TEST)
-        gl.glAlphaFunc(gl.GL_GREATER, 0.9)
-        gl.glBlendFunc(gl.GL_ZERO, gl.GL_ONE)
-        gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
-        gl.glPolygonOffset(0.01, 1)
+        glEnable(GL_ALPHA_TEST)
+        glAlphaFunc(GL_GREATER, 0.9)
+        glBlendFunc(GL_ZERO, GL_ONE)
+        glEnable(GL_POLYGON_OFFSET_FILL)
+        glPolygonOffset(0.01, 1)
 
         depth_shader.bind()
 
@@ -159,7 +159,7 @@ class DepthOnlyPass(object):
 
         depth_shader.unbind()
 
-        gl.glDisable(gl.GL_POLYGON_OFFSET_FILL)
+        glDisable(GL_POLYGON_OFFSET_FILL)
 
 
 class LightingPass(object):
@@ -182,7 +182,7 @@ class LightingPass(object):
         if self.texture:
             self.texture.delete()
             # FIDME: delete self.depth
-        self.texture = Texture(width, height, format=gl.GL_RGBA32F)
+        self.texture = Texture(width, height, format=GL_RGBA32F)
         self.fbo = Framebuffer(self.texture)
         self.depth = Depthbuffer(width, height)
         self.fbo.depth = self.depth
@@ -201,18 +201,18 @@ class LightingPass(object):
 
         fbo = self.get_fbo(camera.viewport)
 
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glAlphaFunc(gl.GL_GREATER, 0.9)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+        glAlphaFunc(GL_GREATER, 0.9)
+        glBlendFunc(GL_SRC_ALPHA, GL_ZERO)
 
         # First pass writes depth, so write it with an offset
-        gl.glEnable(gl.GL_POLYGON_OFFSET_FILL)
-        gl.glPolygonOffset(0.01, 1)
-        gl.glDepthMask(gl.GL_TRUE)
+        glEnable(GL_POLYGON_OFFSET_FILL)
+        glPolygonOffset(0.01, 1)
+        glDepthMask(GL_TRUE)
 
         with fbo:
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             if not lights:
                 return
             diffuse_lighting.bind()
@@ -239,12 +239,12 @@ class LightingPass(object):
                         o.draw(camera)
 
                 # Subsequent passes are drawn without writing to the z-buffer
-                gl.glDisable(gl.GL_POLYGON_OFFSET_FILL)
-                gl.glDepthMask(gl.GL_FALSE)
-                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+                glDisable(GL_POLYGON_OFFSET_FILL)
+                glDepthMask(GL_FALSE)
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE)
 
             diffuse_lighting.unbind()
-            gl.glDepthMask(gl.GL_TRUE)
+            glDepthMask(GL_TRUE)
 
     def __del__(self):
         if self.texture:
@@ -309,11 +309,11 @@ class CompositePass(object):
         return not node.is_transparent()
 
     def render(self, camera, objects):
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glEnable(gl.GL_ALPHA_TEST)
-        gl.glAlphaFunc(gl.GL_GREATER, 0.9)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+        glEnable(GL_ALPHA_TEST)
+        glAlphaFunc(GL_GREATER, 0.9)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         composite_shader.bind()
 
         composite_shader.bind_texture(
@@ -340,14 +340,14 @@ class LightingAccumulationRenderer(object):
 
     def render(self, scene, camera):
         self.lighting.ambient = scene.ambient
-        gl.glEnable(gl.GL_TEXTURE_2D)
-        gl.glClearColor(1.0, 0, 0, 0)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glDisable(gl.GL_CULL_FACE)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glEnable(gl.GL_ALPHA_TEST)
-        gl.glAlphaFunc(gl.GL_GREATER, 0.9)
+        glEnable(GL_TEXTURE_2D)
+        glClearColor(1.0, 0, 0, 0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glDisable(GL_CULL_FACE)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_ALPHA_TEST)
+        glAlphaFunc(GL_GREATER, 0.9)
         for p in self.passes:
             camera.set_matrix()
             p.render(camera, scene.objects)

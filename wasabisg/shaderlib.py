@@ -1,4 +1,4 @@
-from shader import Shader
+from .shader import Shader
 
 
 specular_shader = Shader(

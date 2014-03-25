@@ -8,7 +8,9 @@
 import numbers
 from itertools import chain
 from contextlib import contextmanager
-from pyglet.gl import *
+
+from OpenGL.GL import *
+
 from pyglet.graphics import Group
 from pyglet.image import SolidColorImagePattern
 from ctypes import *
@@ -72,8 +74,9 @@ class Shader(object):
 
         # convert the source strings into a ctypes pointer-to-char array, and upload them
         # this is deep, dark, dangerous black magick - don't try stuff like this at home!
-        src = (c_char_p * count)(*strings)
-        glShaderSource(shader, count, cast(pointer(src), POINTER(POINTER(c_char))), None)
+#        src = (c_char_p * count)(*strings)
+#        glShaderSource(shader, count, cast(pointer(src), POINTER(POINTER(c_char))), None)
+        glShaderSource(shader, ''.join(strings))
 
         # compile the shader
         glCompileShader(shader)
@@ -94,7 +97,7 @@ class Shader(object):
             print buffer.value
         else:
             # all is well, so attach the shader to the program
-            glAttachShader(self.handle, shader);
+            glAttachShader(self.handle, shader)
 
     def link(self):
         # link the program
@@ -125,8 +128,8 @@ class Shader(object):
         activeshader = self
 
     def unbind(self):
-        # unbind whatever program is currently bound - not necessarily this program,
-        # so this should probably be a class method instead
+        # unbind whatever program is currently bound - not necessarily this
+        # program, so this should probably be a class method instead
         global activeshader
         glUseProgram(0)
         activeshader = None
@@ -137,10 +140,11 @@ class Shader(object):
         # check there are 1-4 values
         if len(vals) in range(1, 5):
             # select the correct function
-            { 1 : glUniform1f,
-                2 : glUniform2f,
-                3 : glUniform3f,
-                4 : glUniform4f
+            {
+                1: glUniform1f,
+                2: glUniform2f,
+                3: glUniform3f,
+                4: glUniform4f
                 # retrieve the uniform location, and set
             }[len(vals)](glGetUniformLocation(self.handle, name), *vals)
 
@@ -150,7 +154,8 @@ class Shader(object):
         # check there are 1-4 values
         if len(vals) in range(1, 5):
             # select the correct function
-            {1: glUniform1i,
+            {
+                1: glUniform1i,
                 2: glUniform2i,
                 3: glUniform3i,
                 4: glUniform4i
@@ -242,6 +247,36 @@ class Shader(object):
         self.texture_bindings[matprop] = uniform
 
 
+class ShaderGroup(Group):
+    """A group that activates a Shader.
+
+    Lists created with this group will be the rendered with the shader enabled;
+    uniform variables can also be configured that will be applied whenever the
+    shader is bound.
+
+    """
+    def __init__(self, shader, parent=None):
+        super(ShaderGroup, self).__init__(parent)
+        self.shader = shader
+        self.uniforms = {}
+
+    def set_state(self):
+        self.shader.bind()
+        for name, args in self.uniforms.iteritems():
+            self.shader.uniformf(name, *args)
+        ShaderGroup.currentshader = self.shader
+
+    def uniformf(self, name, *args):
+        """Set a named uniform value.
+
+        This will be set when the shader is bound."""
+        self.uniforms[name] = args
+
+    def unset_state(self):
+        self.shader.unbind()
+        ShaderGroup.currentshader = None
+
+
 @contextmanager
 def mtllib(lib):
     global activemtllib
@@ -271,33 +306,3 @@ class MaterialGroup(Group):
         if activeshader:
             activeshader.unset_material(self.mtl)
         super(MaterialGroup, self).unset_state()
-
-
-class ShaderGroup(Group):
-    """A group that activates a Shader.
-
-    Lists created with this group will be the rendered with the shader enabled;
-    uniform variables can also be configured that will be applied whenever the
-    shader is bound.
-
-    """
-    def __init__(self, shader, parent=None):
-        super(ShaderGroup, self).__init__(parent)
-        self.shader = shader
-        self.uniforms = {}
-
-    def set_state(self):
-        self.shader.bind()
-        for name, args in self.uniforms.iteritems():
-            self.shader.uniformf(name, *args)
-        ShaderGroup.currentshader = self.shader
-
-    def uniformf(self, name, *args):
-        """Set a named uniform value.
-
-        This will be set when the shader is bound."""
-        self.uniforms[name] = args
-
-    def unset_state(self):
-        self.shader.unbind()
-        ShaderGroup.currentshader = None
