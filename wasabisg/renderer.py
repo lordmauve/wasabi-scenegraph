@@ -61,7 +61,7 @@ diffuse_lighting = Shader(
     vert="""
 
 varying vec3 normal;
-varying vec3 pos; // position of the fragment in world space
+varying vec3 pos; // position of the fragment in screen space
 varying vec2 uv;
 
 //uniform mat4 inv_view;
@@ -282,15 +282,14 @@ const mat4 proj = mat4(
 );
 
 void main (void) {
-    vec4 mapcolour = texture2D(diffuse, uv);
+    vec4 mapcolour = texture2D(diffuse, uv) * vec4(colour, 1.0);
     vec4 diffuse = vec4(1.0, 1.0, 1.0, 1.0);
-
-    vec4 lighting = texture2DProj(lighting, proj * projuv);
 
     if (illum == 0) {
         gl_FragColor = mapcolour;
     } else {
-        gl_FragColor = mapcolour * lighting * vec4(colour, 1.0);
+        vec4 lighting = texture2DProj(lighting, proj * projuv);
+        gl_FragColor = mapcolour * lighting;
     }
 }
 """,

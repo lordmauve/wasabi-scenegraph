@@ -7,7 +7,8 @@ from OpenGL.GL import GL_TRIANGLES
 class Sphere(Mesh):
     """Construct a Mesh that is a 3D UV sphere."""
 
-    def __init__(self,
+    def __init__(
+            self,
             radius=1,
             latitude_divisions=20,
             longitude_divisions=40,

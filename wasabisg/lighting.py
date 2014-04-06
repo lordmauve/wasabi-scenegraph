@@ -8,7 +8,11 @@ from OpenGL.GL import *
 from euclid import Point3
 
 
-class Light(object):
+class BaseLight(object):
+    """Indicate that this is a light."""
+
+
+class Light(BaseLight):
     def __init__(self,
             pos=Point3(0, 0, 0),
             colour=(1, 1, 1, 1),

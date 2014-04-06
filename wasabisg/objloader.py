@@ -75,9 +75,13 @@ class Mesh(object):
         ]
 
         if self.normals:
+            assert len(self.normals) == 3 * l, \
+                "len(normals) != len(vertices)"
             data.append(('n3f', self.normals))
 
         if self.texcoords:
+            assert len(self.texcoords) == 2 * l, \
+                "len(texcoords) != len(vertices)"
             data.append(('t2f', self.texcoords))
 
         self.list = batch.add_indexed(

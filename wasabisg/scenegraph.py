@@ -1,38 +1,20 @@
-import math
 import itertools
 import pyglet
 
 from pyglet.graphics import Group
-from pyglet.gl import *
+from OpenGL.GL import *
+from OpenGL.GLU import *
 from euclid import Matrix4, Point3, Vector3
 
 from .renderer import LightingAccumulationRenderer
+from .objloader import Model, Mesh
 
 
-def v3(*args):
-    if len(args) == 1:
-        return Point3(*args[0])
-    return Point3(*args)
-
-
-#class v3(tuple):
-#    def __add__(self, ano):
-#        return v3(a + b for a, b in zip(self, ano))
-#
-#    def __sub__(self, ano):
-#        return v3(a - b for a, b in zip(self, ano))
-#
-#    def __mul__(self, scalar):
-#        return v3(a * scalar for a in self)
-#
-#    def normalized(self):
-#        return self * (1.0 / self.length())
-#
-#    def length(self):
-#        return math.sqrt(self.length2())
-#
-#    def length2(self):
-#        return sum(a * a for a in self)
+def v3(a, *args):
+    """Helper for constructing a Point vector."""
+    if not args:
+        return Point3(*a)
+    return Point3(a, *args)
 
 
 class GLStateGroup(Group):
@@ -146,7 +128,8 @@ class Scene(object):
     future however it may support more sophisticated behaviour.
 
     """
-    def __init__(self,
+    def __init__(
+            self,
             ambient=(0, 0, 0, 0),
             renderer=LightingAccumulationRenderer):
 
@@ -161,6 +144,10 @@ class Scene(object):
         self.objects[:] = []
 
     def add(self, obj):
+        if isinstance(obj, Mesh):
+            obj = ModelNode(Model(meshes=[obj]))
+        elif isinstance(obj, Model):
+            obj = ModelNode(obj)
         if obj in self.objects:
             return
         self.objects.append(obj)

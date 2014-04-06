@@ -1,0 +1,20 @@
+# Blender MTL File: 'tree.blend'
+# Material Count: 2
+
+newmtl Leaves
+Ns 9.803922
+Ka 0.000000 0.000000 0.000000
+Kd 0.1 0.5 0.1
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+
+newmtl Trunk
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.2 0.1 0.05
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
