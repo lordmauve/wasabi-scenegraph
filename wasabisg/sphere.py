@@ -1,6 +1,5 @@
 import math
-from objloader import Mesh, Material
-
+from .model import Mesh, Material
 from OpenGL.GL import GL_TRIANGLES
 
 

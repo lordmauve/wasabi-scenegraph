@@ -6,8 +6,8 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from euclid import Matrix4, Point3, Vector3
 
-from .renderer import LightingAccumulationRenderer
-from .objloader import Model, Mesh
+from .fallbackrenderer import FallbackRenderer
+from .model import Model, Mesh
 
 
 def v3(a, *args):
@@ -130,24 +130,34 @@ class Scene(object):
     """
     def __init__(
             self,
-            ambient=(0, 0, 0, 0),
-            renderer=LightingAccumulationRenderer):
+            ambient=(0, 0, 0, 1.0),
+            renderer=FallbackRenderer):
 
         self.ambient = ambient
         self.objects = []
+        self.models = {}
+
         if callable(renderer):
             self.renderer = renderer()
         else:
             self.renderer = renderer
+
+    def prepare_model(self, model):
+        return self.renderer.prepare_model(model)
 
     def clear(self):
         self.objects[:] = []
 
     def add(self, obj):
         if isinstance(obj, Mesh):
-            obj = ModelNode(Model(meshes=[obj]))
+            model = Model(meshes=[obj])
+            model = self.prepare_model(model)
+            obj = ModelNode(model)
         elif isinstance(obj, Model):
-            obj = ModelNode(obj)
+            model = self.prepare_model(obj)
+            obj = ModelNode(model)
+        elif isinstance(obj, ModelNode):
+            obj.model_instance = self.prepare_model(obj.model_instance)
         if obj in self.objects:
             return
         self.objects.append(obj)

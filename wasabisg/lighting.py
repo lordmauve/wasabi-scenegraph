@@ -1,7 +1,7 @@
 import pyglet
 from gletools import (
     Projection, Framebuffer, Texture, Depthbuffer,
-    interval, quad, Group, Matrix,
+    interval, quad, Group
 )
 from OpenGL.GL import *
 
@@ -14,10 +14,10 @@ class BaseLight(object):
 
 class Light(BaseLight):
     def __init__(self,
-            pos=Point3(0, 0, 0),
-            colour=(1, 1, 1, 1),
-            intensity=5,
-            falloff=2):
+                 pos=Point3(0, 0, 0),
+                 colour=(1, 1, 1, 1),
+                 intensity=5,
+                 falloff=2):
         self.pos = pos
         self._colour = colour
         self.intensity = intensity

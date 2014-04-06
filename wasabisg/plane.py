@@ -1,7 +1,8 @@
-from objloader import Mesh, Material
 
-from OpenGL.GL import GL_QUADS
+from OpenGL.GL import GL_QUADS, GL_QUAD_STRIP, GL_TRIANGLE_STRIP
 from euclid import Point3, Vector3
+
+from .model import Mesh, Material
 
 
 class Quad(Mesh):
@@ -58,7 +59,7 @@ class Quad(Mesh):
         return '<%s at 0x%x>' % (self.__class__.__name__, id(self))
 
 
-class Plane(Quad):
+class Plane(Mesh):
     """Construct a single large quad."""
 
     def __init__(
@@ -66,6 +67,7 @@ class Plane(Quad):
             center=Point3(0, 0, 0),
             normal=Vector3(0, 1, 0),
             size=1000.0,
+            divisions=1,
             material=None):
 
         material = material or Material(name='plane_material')
@@ -80,15 +82,47 @@ class Plane(Quad):
         x = x.normalized()
         y = x.cross(normal)
 
-        sx = x * size
-        sy = y * size
+        sx = x * float(size) / divisions
+        sy = y * float(size) / divisions
+
+        ns = []
+        uvs = []
+        vs = []
+
+        y = -sy * divisions * 0.5
+        for j in xrange(divisions + 1):
+            x = -sx * divisions * 0.5
+            v = j / float(divisions)
+            for i in xrange(divisions + 1):
+                vs.extend(center + x + y)
+                ns.extend(normal)
+                u = i / float(divisions)
+                uvs.extend((u, v))
+                x += sx
+            y += sy
+
+        indices = []
+
+        def idx(i, j):
+            indices.append(j * (divisions + 1) + i)
+
+        # TODO: Use quad strips and save some index memory
+        for j in xrange(divisions):
+            for i in xrange(divisions):
+                idx(i, j)
+                idx(i + 1, j)
+                idx(i + 1, j + 1)
+                idx(i, j + 1)
 
         super(Plane, self).__init__(
-            points=[
-                center - sx - sy,
-                center - sx + sy,
-                center + sx + sy,
-                center + sx - sy,
-            ],
-            material=material
+            GL_QUADS,
+            vertices=vs,
+            normals=ns,
+            texcoords=uvs,
+            indices=indices,
+            material=material,
+            name=repr(self)
         )
+
+    def __repr__(self):
+        return '<%s at 0x%x>' % (self.__class__.__name__, id(self))

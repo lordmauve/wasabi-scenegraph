@@ -5,13 +5,12 @@ import pyglet
 import random
 from pyglet import gl
 from pyglet.window import key
-from pyglet.graphics import TextureGroup
 
 from wasabisg.sphere import Sphere
 from wasabisg.plane import Plane
-from wasabisg.scenegraph import Camera, Scene, v3, GLStateGroup, ModelNode
-from wasabisg.objloader import ModelLoader, Model, Material
-from wasabisg.fallbackrenderer import FallbackRenderer
+from wasabisg.scenegraph import Camera, Scene, v3, ModelNode
+from wasabisg.loaders.objloader import ObjFileLoader
+from wasabisg.model import Material
 from wasabisg.lighting import Light
 
 
@@ -26,13 +25,12 @@ tree_model = None
 
 def load():
     global scene, tree_model
-    loader = ModelLoader()
+    loader = ObjFileLoader()
     tree_model = loader.load_obj('tree.obj')
 
     # Scene
     scene = Scene(
-        ambient=(0.05, 0.05, 0.05, 1.0),
-#       renderer=FallbackRenderer()
+        ambient=(0.05, 0.05, 0.05, 1.0)
     )
 
 
@@ -63,6 +61,8 @@ def init_scene():
     # Ground
     scene.add(
         Plane(
+            divisions=2,
+            size=100,
             material=Material(
                 name='ground',
                 Kd=(0.1, 0.5, 0.1),
