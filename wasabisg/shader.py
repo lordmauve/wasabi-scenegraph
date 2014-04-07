@@ -277,32 +277,17 @@ class ShaderGroup(Group):
         ShaderGroup.currentshader = None
 
 
-@contextmanager
-def mtllib(lib):
-    global activemtllib
-    prev = activemtllib
-    activemtllib = lib
-    try:
-        yield
-    finally:
-        activemtllib = prev
-
-
 class MaterialGroup(Group):
-    def __init__(self, matname, parent=None):
-        self.matname = matname
+    def __init__(self, material, parent=None):
+        self.material = material
         super(MaterialGroup, self).__init__(parent=parent)
 
     def set_state(self):
         super(MaterialGroup, self).set_state()
         if activeshader:
-            try:
-                self.mtl = activemtllib[self.matname]
-            except KeyError:
-                return
-            activeshader.set_material(self.mtl)
+            activeshader.set_material(self.material)
 
     def unset_state(self):
         if activeshader:
-            activeshader.unset_material(self.mtl)
+            activeshader.unset_material(self.material)
         super(MaterialGroup, self).unset_state()

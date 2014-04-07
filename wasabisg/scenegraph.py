@@ -6,7 +6,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from euclid import Matrix4, Point3, Vector3
 
-from .fallbackrenderer import FallbackRenderer
+from .renderer import LightingAccumulationRenderer
 from .model import Model, Mesh
 
 
@@ -131,7 +131,7 @@ class Scene(object):
     def __init__(
             self,
             ambient=(0, 0, 0, 1.0),
-            renderer=FallbackRenderer):
+            renderer=LightingAccumulationRenderer):
 
         self.ambient = ambient
         self.objects = []
@@ -146,9 +146,16 @@ class Scene(object):
         return self.renderer.prepare_model(model)
 
     def clear(self):
-        self.objects[:] = []
+        """Remove all objects from the scene."""
+        del self.objects[:]
 
     def add(self, obj):
+        """Add obj to the scene.
+
+        obj should be a scenegraph node, but currently adding a Mesh or Model
+        directly is supported as a convenience.
+
+        """
         if isinstance(obj, Mesh):
             model = Model(meshes=[obj])
             model = self.prepare_model(model)
@@ -163,16 +170,19 @@ class Scene(object):
         self.objects.append(obj)
 
     def remove(self, obj):
+        """Remove obj from the scene."""
         try:
             self.objects.remove(obj)
         except ValueError:
             pass
 
     def update(self, dt):
+        """Update all objects in the scene with the given time step."""
         for o in self.objects:
             o.update(dt)
 
     def render(self, camera):
+        """Render the scene with the given camera."""
         self.renderer.render(self, camera)
 
 
@@ -197,6 +207,7 @@ class Camera(object):
         self.look_at = look_at
 
     def eye_vector(self):
+        """Get the direction in which the camera is looking."""
         return self.look_at - self.pos
 
     def set_matrix(self):
@@ -218,6 +229,7 @@ class Camera(object):
         return Matrix4.new(*mat)
 
     def get_view_matrix(self):
+        """Get the view matrix as a euclid.Matrix4."""
         f = (v3(self.look_at) - v3(self.pos)).normalized()
         #print "f=", f
         up = Vector3(0, 1, 0)

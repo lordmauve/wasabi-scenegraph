@@ -1,10 +1,3 @@
-import pyglet
-from gletools import (
-    Projection, Framebuffer, Texture, Depthbuffer,
-    interval, quad, Group
-)
-from OpenGL.GL import *
-
 from euclid import Point3
 
 
@@ -13,6 +6,15 @@ class BaseLight(object):
 
 
 class Light(BaseLight):
+    """A point light.
+
+    :param euclid.Point3 pos: The position of the light in the scene.
+    :param colour: The colour of the light as an RGBA tuple. Typically the A
+                   component should be 1.0.
+    :param intensity: The intensity of the light. This can be arbitrarily high.
+    :param falloff: The rate of falloff of the light.
+
+    """
     def __init__(self,
                  pos=Point3(0, 0, 0),
                  colour=(1, 1, 1, 1),

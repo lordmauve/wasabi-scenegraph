@@ -8,10 +8,11 @@ from .model import Mesh, Material
 class Quad(Mesh):
     """A single quad.
 
-    points should be a list of 4 euclid.Point3.
+    points should be a list of 4 coplanar euclid.Point3 that represent the
+    vertices of the quad.
 
     normals should be a list of 4 euclid.Vector3. If omitted or None, then
-    these will be computed such that the quad appears planar.
+    these will be computed such that the quad is shaded as flat.
 
     """
     def __init__(
@@ -60,7 +61,13 @@ class Quad(Mesh):
 
 
 class Plane(Mesh):
-    """Construct a single large quad."""
+    """Construct a single square mesh.
+
+    If divisions == 1, then this will be a single quad, otherwise the quad
+    will be subdivided that number of times in each direction. For example, if
+    divisions == 4 then the Plane mesh will consist of 16 squares.
+
+    """
 
     def __init__(
             self,

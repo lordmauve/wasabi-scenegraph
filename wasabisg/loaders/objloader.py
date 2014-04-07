@@ -14,7 +14,7 @@ class ObjFileLoader(object):
         self.mtl_loader = MtlFileLoader()
 
     def load_obj(self, filename, swapyz=False):
-        """Loads a Wavefront OBJ file. """
+        """Load a Wavefront OBJ file and return a Model."""
 
         mode = GL_TRIANGLES
 

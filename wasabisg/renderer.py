@@ -1,10 +1,11 @@
+from pyglet.graphics import Batch
 from OpenGL.GL import *
 from gletools import (
     Projection, Framebuffer, Texture, Depthbuffer,
-    interval, quad, Group, Matrix,
+    interval, quad, Matrix,
 )
 
-from .shader import Shader, ShaderGroup
+from .shader import Shader, ShaderGroup, MaterialGroup
 from .lighting import Light
 
 
@@ -336,6 +337,23 @@ class LightingAccumulationRenderer(object):
                 transparency=True
             )
         ]
+
+    def prepare_model(self, model):
+        if hasattr(model, 'draw'):
+            return model
+        batch = Batch()
+        for m in model.meshes:
+            self.prepare_mesh(m, batch)
+        model.batch = batch
+        model.draw = batch.draw
+        return model
+
+    def prepare_mesh(self, mesh, batch):
+        mat = mesh.material
+        mat.load_textures()
+
+        l = mesh.to_list(batch, group=MaterialGroup(mat))
+        mesh.list = l
 
     def render(self, scene, camera):
         self.lighting.ambient = scene.ambient

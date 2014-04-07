@@ -241,7 +241,7 @@ class Material(dict):
         try:
             return self[k]
         except KeyError:
-            tex = self.loader.load(self[groupname])
+            tex = self.loader.load_texture(self[groupname])
             self[k] = tex
             return tex
 
