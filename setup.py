@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='wasabi.scenegraph',
-    version='0.1',
+    name='wasabi-scenegraph',
+    version='0.1.0',
     description="Pure python 3D graphics engine",
     long_description=open('README.rst').read(),
     author='Daniel Pope',
@@ -11,10 +11,11 @@ setup(
     url='https://bitbucket.org/lordmauve/wasabi-scenegraph',
     packages=find_packages(),
     install_requires=[
+        'PyOpenGL==3.0.2',
         'pyglet>=1.2alpha1',
         'euclid>=0.1',
     ],
-    extras_requires={
+    extras_require={
         'particles': [
             'lepton>=1.0b2'
         ]
