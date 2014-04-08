@@ -71,23 +71,6 @@ class Model(object):
         self.materials = {}
         self.meshes = meshes
 
-    def add_mesh(self, mesh):
-        # This is renderer specific and belongs elsewhere
-        self.batch = pyglet.graphics.Batch()
-        mtl = mesh.material
-        if mtl:
-            mtlid = mtl['name']
-            try:
-                mtl = self.materials[mtlid]
-            except KeyError:
-                self.materials[mtlid] = mtl
-            else:
-                mesh.material = mtl
-
-        l = mesh.to_list(self.batch)
-        # only keep the list, to save memory
-        self.meshes.append((mesh.name, l, mtl))
-
     def copy(self):
         """Create a copy of the model that shares vertex data only.
 
