@@ -38,9 +38,9 @@ def init_scene():
     """Set up the scene and place objects into it."""
     # Set up objects in the scene
     sunlight = Light(
-        pos=(10, 1, 10),
+        pos=(0, 1, 0),
         colour=(1.0, 1.0, 1.0, 1.0),
-        intensity=5,
+        intensity=15,
         falloff=0.5
     )
 

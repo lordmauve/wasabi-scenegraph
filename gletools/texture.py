@@ -33,6 +33,12 @@ def gen_texture():
     return glGenTextures(1)
 
 
+def log(msg, *args):
+    import sys
+    sys.stdout.write((msg + '\n') % args)
+    sys.stdout.flush()
+
+
 class Texture(Context):
 
     gl_byte = Object(
@@ -88,9 +94,17 @@ class Texture(Context):
             type=gl_short,
             channels=rgb,
         ),
+        GL_RGBA16: Object(
+            type=gl_short,
+            channels=rgba,
+        ),
         GL_RGBA32F: Object(
             pil='RGBA',
             type=gl_float,
+            channels=rgba,
+        ),
+        GL_RGBA16F: Object(
+            type=gl_half_float,
             channels=rgba,
         ),
         GL_RGB16F: Object(
@@ -288,6 +302,7 @@ class Texture(Context):
                         data,
                     )
             else:
+                log('glTexImage2D()')
                 glTexImage2D(
                     self.target, level, self.format,
                     self.width / 2 ** level, self.height / 2 ** level,
@@ -297,6 +312,7 @@ class Texture(Context):
                     self.spec.channels.enum, self.spec.type.enum,
                     0,
                 )
+                log('Texture allocated')
 
             glFlush()
 

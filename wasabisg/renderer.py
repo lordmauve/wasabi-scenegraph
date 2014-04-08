@@ -9,6 +9,12 @@ from .shader import Shader, ShaderGroup, MaterialGroup
 from .lighting import Light
 
 
+def log(msg, *args):
+    import sys
+    sys.stdout.write((msg + '\n') % args)
+    sys.stdout.flush()
+
+
 class Renderer(object):
     """Abstract class for rendering a scene."""
     def render(self, scene, camera):
@@ -183,7 +189,11 @@ class LightingPass(object):
         if self.texture:
             self.texture.delete()
             # FIDME: delete self.depth
-        self.texture = Texture(width, height, format=GL_RGBA32F)
+
+        # FIXME: possible segfault here allocating a texture
+        log('Allocate light accumulation buffer %d x %d', width, height)
+        self.texture = Texture(width, height, format=GL_RGBA16F)
+        log('Allocate FBO')
         self.fbo = Framebuffer(self.texture)
         self.depth = Depthbuffer(width, height)
         self.fbo.depth = self.depth
@@ -211,7 +221,6 @@ class LightingPass(object):
         glEnable(GL_POLYGON_OFFSET_FILL)
         glPolygonOffset(0.01, 1)
         glDepthMask(GL_TRUE)
-
         with fbo:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             if not lights:
@@ -343,7 +352,8 @@ class LightingAccumulationRenderer(object):
             return model
         batch = Batch()
         for m in model.meshes:
-            self.prepare_mesh(m, batch)
+            if not hasattr(m, 'list'):
+                self.prepare_mesh(m, batch)
         model.batch = batch
         model.draw = batch.draw
         return model
