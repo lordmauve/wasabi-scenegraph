@@ -4,12 +4,11 @@ import math
 import pyglet
 from pyglet import gl
 from pyglet.window import key
-from pyglet.graphics import TextureGroup
 
 from wasabisg.sphere import Sphere
-from wasabisg.scenegraph import Camera, Scene, v3, GLStateGroup, ModelNode
-from wasabisg.objloader import ModelLoader, Model, Material
+from wasabisg.model import Model, Material
 from wasabisg.lighting import Light
+from wasabisg.scenegraph import Scene, Camera, v3, ModelNode
 
 
 FPS = 60
