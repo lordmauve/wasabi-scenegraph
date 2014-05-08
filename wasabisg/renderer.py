@@ -1,18 +1,8 @@
 from pyglet.graphics import Batch
 from OpenGL.GL import *
-from gletools import (
-    Projection, Framebuffer, Texture, Depthbuffer,
-    interval, quad, Matrix,
-)
 
-from .shader import Shader, ShaderGroup, MaterialGroup
+from .shader import Shader, MaterialGroup
 from .lighting import Light
-
-
-def log(msg, *args):
-    import sys
-    sys.stdout.write((msg + '\n') % args)
-    sys.stdout.flush()
 
 
 class Renderer(object):
@@ -127,54 +117,12 @@ void main (void) {
 diffuse_lighting.bind_material_to_texture('map_Kd', 'diffuse')
 
 
-class DepthOnlyPass(object):
-    def __init__(self):
-        self.currentviewport = None
-        self.fbo = None
-        self.texture = None
-
-    def filter(self, node):
-        return not node.is_transparent()
-
-    def get_projected_texture(self, viewport):
-        if viewport == self.currentviewport:
-            return self.fbo
-
-        width, height = viewport
-
-        if self.texture:
-            self.texture.delete()
-        self.fbo = Framebuffer(self.texture)
-        return self.fbo
-
-    def render(self, camera, objects):
-        lights = [o for o in objects if isinstance(o, Light)]
-        if not lights:
-            return
-
-        glEnable(GL_ALPHA_TEST)
-        glAlphaFunc(GL_GREATER, 0.9)
-        glBlendFunc(GL_ZERO, GL_ONE)
-        glEnable(GL_POLYGON_OFFSET_FILL)
-        glPolygonOffset(0.01, 1)
-
-        depth_shader.bind()
-
-        for o in objects:
-            if self.filter(o):
-                o.draw(camera)
-
-        depth_shader.unbind()
-
-        glDisable(GL_POLYGON_OFFSET_FILL)
-
-
 class LightingPass(object):
     def __init__(self, ambient=(0, 0, 0, 1)):
         self.ambient = ambient
         self.currentviewport = None
         self.fbo = None
-        self.texture = None
+        self.lightbuf = self.depthbuf = None
 
     def filter(self, node):
         return not node.is_transparent()
@@ -186,17 +134,36 @@ class LightingPass(object):
 
         width, height = viewport
 
-        if self.texture:
-            self.texture.delete()
-            # FIDME: delete self.depth
+        if not self.fbo:
+            self.fbo = glGenFramebuffers(1)
+            self.lightbuf = glGenTextures(1)
+            self.depthbuf = glGenRenderbuffers(1)
 
-        # FIXME: possible segfault here allocating a texture
-        log('Allocate light accumulation buffer %d x %d', width, height)
-        self.texture = Texture(width, height, format=GL_RGBA16F)
-        log('Allocate FBO')
-        self.fbo = Framebuffer(self.texture)
-        self.depth = Depthbuffer(width, height)
-        self.fbo.depth = self.depth
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
+        glBindTexture(GL_TEXTURE_2D, self.lightbuf)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glTexImage2D(
+            GL_TEXTURE_2D, 0, GL_RGBA32F,
+            width, height,
+            0,
+            GL_RGBA, GL_FLOAT,
+            0
+        )
+        glFramebufferTexture2D(
+            GL_FRAMEBUFFER,
+            GL_COLOR_ATTACHMENT0,
+            GL_TEXTURE_2D,
+            self.lightbuf,
+            0
+        )
+        glBindRenderbuffer(GL_RENDERBUFFER, self.depthbuf)
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height)
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.depthbuf)
+        assert glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, \
+            "Framebuffer is not complete!"
         return self.fbo
 
     def transform_lights(self, camera, positions):
@@ -221,44 +188,48 @@ class LightingPass(object):
         glEnable(GL_POLYGON_OFFSET_FILL)
         glPolygonOffset(0.01, 1)
         glDepthMask(GL_TRUE)
-        with fbo:
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            if not lights:
-                return
-            diffuse_lighting.bind()
-            diffuse_lighting.uniformf('ambient', *self.ambient)
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        if not lights:
+            return
+        diffuse_lighting.bind()
+        diffuse_lighting.uniformf('ambient', *self.ambient)
 
 #            diffuse_lighting.uniform_matrixf('inv_view', camera.get_view_matrix().inverse())
 
-            while lights:
-                ls = lights[:8]
-                lights = lights[8:]
+        while lights:
+            ls = lights[:8]
+            lights = lights[8:]
 
-                diffuse_lighting.uniform4fv('colours', [l.colour for l in ls])
+            diffuse_lighting.uniform4fv('colours', [l.colour for l in ls])
 #                diffuse_lighting.uniform4fv('positions', [l.pos for l in ls])
-                diffuse_lighting.uniform4fv('positions',
-                    self.transform_lights(camera, (l.pos for l in ls))
-                )
-                diffuse_lighting.uniform1fv(
-                    'intensities', [l.intensity for l in ls])
-                diffuse_lighting.uniform1fv(
-                    'falloffs', [l.falloff for l in ls])
-                diffuse_lighting.uniformi('num_lights', len(ls))
-                for o in objects:
-                    if self.filter(o):
-                        o.draw(camera)
+            diffuse_lighting.uniform4fv('positions',
+                self.transform_lights(camera, (l.pos for l in ls))
+            )
+            diffuse_lighting.uniform1fv(
+                'intensities', [l.intensity for l in ls])
+            diffuse_lighting.uniform1fv(
+                'falloffs', [l.falloff for l in ls])
+            diffuse_lighting.uniformi('num_lights', len(ls))
+            for o in objects:
+                if self.filter(o):
+                    o.draw(camera)
 
-                # Subsequent passes are drawn without writing to the z-buffer
-                glDisable(GL_POLYGON_OFFSET_FILL)
-                glDepthMask(GL_FALSE)
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+            # Subsequent passes are drawn without writing to the z-buffer
+            glDisable(GL_POLYGON_OFFSET_FILL)
+            glDepthMask(GL_FALSE)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE)
 
-            diffuse_lighting.unbind()
-            glDepthMask(GL_TRUE)
+        diffuse_lighting.unbind()
+        glDepthMask(GL_TRUE)
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
     def __del__(self):
-        if self.texture:
-            self.texture.delete()
+        if self.fbo:
+            glDeleteTextures([self.lightbuf, self.depthbuf])
+            glDeleteFramebuffers([self.fbo])
+            self.fbo = None
 
 
 composite_shader = Shader(
@@ -326,7 +297,7 @@ class CompositePass(object):
         composite_shader.bind()
 
         composite_shader.bind_texture(
-            'lighting', 0, self.lightingpass.texture.id
+            'lighting', 0, self.lightingpass.lightbuf
         )
 
         for o in objects:
