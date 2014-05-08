@@ -12,14 +12,13 @@ flexible API.
 
 .. _`Pyweek 16`: http://www.pyweek.org/16/
 
-Currently Wasabi Scenegraph depends on PyOpenGL_, pyglet_ and a bundled version
-of gletools_ for OpenGL support, though the intention is to eliminate all but
-PyOpenGL as dependencies. This would leave developers free to choose their
-windowing and event system, including pyglet, pygame or GLUT.
+Currently Wasabi Scenegraph depends on PyOpenGL_ and pyglet_ for OpenGL
+support, though the intention is to eliminate all but PyOpenGL as dependencies.
+This would leave developers free to choose their windowing and event system,
+including pyglet, pygame or GLUT.
 
 .. _PyOpenGL: http://pyopengl.sourceforge.net/
 .. _pyglet: http://www.pyglet.org/
-.. _gletools: http://codeflow.org/entries/2009/jul/31/gletools-advanced-pyglet-utilities/
 
 Wasabi Scenegraph is in very early development and its API and feature set is
 liable to change very significantly between releases.

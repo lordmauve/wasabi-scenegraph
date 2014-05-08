@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='wasabi-scenegraph',
-    version='0.1.0',
+    version='0.1.1',
     description="Pure python 3D graphics engine",
     long_description=open('README.rst').read(),
     author='Daniel Pope',
