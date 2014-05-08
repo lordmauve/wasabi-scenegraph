@@ -150,7 +150,7 @@ class LightingPass(object):
             width, height,
             0,
             GL_RGBA, GL_FLOAT,
-            0
+            None
         )
         glFramebufferTexture2D(
             GL_FRAMEBUFFER,
