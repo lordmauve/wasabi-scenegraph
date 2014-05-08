@@ -2,7 +2,6 @@ from __future__ import division
 
 import math
 import pyglet
-from pyglet import gl
 from pyglet.window import key
 
 from wasabisg.sphere import Sphere
@@ -136,18 +135,14 @@ def update(dt):
     c.pos = v3((0, 3, zpos + 10))
 
 
-c = Camera(pos=v3((0, 0, -20)))
+c = Camera(
+    pos=v3((0, 0, -20)),
+    width=WIDTH,
+    height=HEIGHT
+)
 
 
 def on_draw():
-    gl.glEnable(gl.GL_TEXTURE_2D)
-    gl.glClearColor(1.0, 0, 0, 0)
-    gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-    gl.glDisable(gl.GL_CULL_FACE)
-    gl.glEnable(gl.GL_BLEND)
-    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-    gl.glEnable(gl.GL_ALPHA_TEST)
-    gl.glAlphaFunc(gl.GL_GREATER, 0.9)
     scene.render(c)
 
 

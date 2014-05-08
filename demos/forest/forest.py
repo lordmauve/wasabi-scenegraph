@@ -90,7 +90,11 @@ def update(dt):
     c.pos = v3((math.cos(camera_rot) * 15, 5, math.sin(camera_rot) * 15))
 
 
-c = Camera(pos=v3((0, 0, -20)))
+c = Camera(
+    pos=v3((0, 0, -20)),
+    width=WIDTH,
+    height=HEIGHT
+)
 
 
 def on_draw():
