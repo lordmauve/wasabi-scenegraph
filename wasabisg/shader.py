@@ -308,7 +308,7 @@ class MaterialGroup(Group):
         out = material.copy()
         out['Kd'] = _pad(material.get('Kd', (1.0, 1.0, 1.0)), 3)
         out['Ks'] = _pad(material.get('Ks', (0, 0, 0, 1)))
-        out['Ns'] = clamp(_to_float(material.get('Ns', 0.0)), 1.0, 128.0)
+        out['Ns'] = max(_to_float(material.get('Ns', 0.0)), 1e-3)
         out['illum'] = material.get('illum', 1)
         return out
 

@@ -54,7 +54,6 @@ varying vec3 normal;
 varying vec3 pos;
 varying vec2 uv;
 
-uniform vec4 ambient;
 uniform int num_lights;
 uniform vec4 colours[8];
 uniform vec4 positions[8];
@@ -63,7 +62,8 @@ uniform float falloffs[8];
 uniform sampler2D diffuse_tex;
 uniform vec4 specular;
 uniform float specular_exponent;
-
+uniform vec4 ambient;
+uniform bool add_ambient;
 
 vec3 calc_light(in vec3 frag_normal, in int lnum, in vec3 diffuse) {
     vec4 light = positions[lnum];
@@ -105,8 +105,12 @@ void main (void) {
     int i;
     float weight;
     vec3 n = normalize(normal);
-    vec3 colour = ambient.rgb;
+    vec3 colour = vec3(0, 0, 0);
     vec4 mapcolour = texture2D(diffuse_tex, uv);
+
+    if (add_ambient) {
+        colour += ambient.rgb * mapcolour.rgb;
+    }
 
     for (i = 0; i < num_lights; i++) {
         colour += calc_light(n, i, mapcolour.rgb);
@@ -202,6 +206,7 @@ class LightingPass(object):
             return
         lighting_shader.bind()
         lighting_shader.uniformf('ambient', *self.ambient)
+        lighting_shader.uniformi('use_ambient', 1)
 
 #            diffuse_lighting.uniform_matrixf('inv_view', camera.get_view_matrix().inverse())
 
@@ -226,6 +231,9 @@ class LightingPass(object):
             glDisable(GL_POLYGON_OFFSET_FILL)
             glDepthMask(GL_FALSE)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+
+            # Only add the ambient component on the first pass
+            lighting_shader.uniformi('use_ambient', 0)
 
         lighting_shader.unbind()
         glDepthMask(GL_TRUE)
@@ -257,9 +265,10 @@ varying vec2 uv;
 varying vec4 projuv;
 
 uniform vec3 colour;
-//uniform sampler2D diffuse;
+uniform sampler2D diffuse;
 uniform sampler2D lighting;
 uniform int illum;
+uniform vec4 ambient;
 
 const mat4 proj = mat4(
     0.5, 0.0, 0.0, 0.0,
@@ -269,14 +278,13 @@ const mat4 proj = mat4(
 );
 
 void main (void) {
-    vec4 mapcolour = vec4(colour, 1.0); // * texture2D(diffuse, uv)
-    vec4 diffuse = vec4(1.0, 1.0, 1.0, 1.0);
+    vec4 mapcolour = vec4(colour, 1.0);
 
     if (illum == 0) {
-        gl_FragColor = mapcolour;
+        gl_FragColor = mapcolour * texture2D(diffuse, uv);
     } else {
         vec4 lighting = texture2DProj(lighting, proj * projuv);
-        gl_FragColor = mapcolour * lighting;
+        gl_FragColor = mapcolour * (lighting + ambient);
     }
 }
 """,
@@ -284,7 +292,7 @@ void main (void) {
 )
 composite_shader.bind_material_to_uniformf('Kd', 'colour')
 composite_shader.bind_material_to_uniformi('illum', 'illum')
-#composite_shader.bind_material_to_texture('map_Kd', 'diffuse')
+composite_shader.bind_material_to_texture('map_Kd', 'diffuse')
 
 
 class CompositePass(object):
@@ -316,9 +324,10 @@ class CompositePass(object):
 class LightingAccumulationRenderer(object):
     def __init__(self):
         self.lighting = LightingPass()
+        self.composite = CompositePass(self.lighting)
         self.passes = [
             self.lighting,
-            CompositePass(self.lighting),
+            self.composite,
             RenderPass(
                 transparency=True
             )

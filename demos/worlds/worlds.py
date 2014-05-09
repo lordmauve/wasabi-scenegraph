@@ -8,6 +8,7 @@ from wasabisg.sphere import Sphere
 from wasabisg.model import Model, Material
 from wasabisg.lighting import Light
 from wasabisg.scenegraph import Scene, Camera, v3, ModelNode
+from wasabisg.fallbackrenderer import FallbackRenderer
 
 
 FPS = 60
@@ -84,7 +85,8 @@ def init_scene():
     global scene, earth, moon, sunlight
     # Create a scene
     scene = Scene(
-        ambient=(0.05, 0.05, 0.05, 1.0)
+        ambient=(0.05, 0.05, 0.05, 1.0),
+        #renderer=FallbackRenderer()
     )
 
     # Set up objects in the scene
