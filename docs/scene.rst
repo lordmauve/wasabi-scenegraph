@@ -81,3 +81,5 @@ Lights
 .. automodule:: wasabisg.lighting
 
 .. autoclass:: Light
+
+.. autoclass:: Sunlight

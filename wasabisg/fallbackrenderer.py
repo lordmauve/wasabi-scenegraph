@@ -1,6 +1,6 @@
 from pyglet.graphics import Batch, Group
 from OpenGL.GL import *
-from .lighting import Light
+from .lighting import Light, Sunlight, BaseLight
 
 
 class MaterialGroup(Group):
@@ -84,13 +84,24 @@ class FallbackRenderer(object):
         mesh.list = l
 
     def render_scene(self, camera, objects):
-        lights = [o for o in objects if isinstance(o, Light)][:GL_MAX_LIGHTS]
+        lights = [o for o in objects if isinstance(o, BaseLight)]
+
+        # Prioritise lights, since we can only use 8
+        lights.sort(key=lambda l: (not isinstance(l, Sunlight), l.intensity / (l.falloff + 1)))
+        lights = lights[:GL_MAX_LIGHTS]
 
         for i, l in enumerate(lights):
-            glLightfv(GL_LIGHT0 + i, GL_POSITION, l.pos.xyz + (1.0,))
-            glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, l.colour)
-            glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, l.colour)
-            glEnable(GL_LIGHT0 + i)
+            target = GL_LIGHT0 + i
+            intensity = float(l.intensity)
+            colour = [c * intensity for c in l.colour]
+            if isinstance(l, Sunlight):
+                glLightfv(target, GL_POSITION, l.direction.xyz + (0.0,))
+            else:
+                glLightfv(target, GL_POSITION, l.pos.xyz + (1.0,))
+                glLightf(target, GL_QUADRATIC_ATTENUATION, l.falloff)
+            glLightfv(target, GL_DIFFUSE, colour)
+            glLightfv(target, GL_SPECULAR, colour)
+            glEnable(target)
 
         if len(lights) < self.lights_enabled:
             for i in range(0, self.lights_enabled - len(lights)):

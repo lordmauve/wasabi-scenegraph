@@ -2,7 +2,7 @@ from pyglet.graphics import Batch
 from OpenGL.GL import *
 
 from .shader import Shader, MaterialGroup
-from .lighting import Light
+from .lighting import Light, Sunlight, BaseLight
 
 
 class Renderer(object):
@@ -88,15 +88,29 @@ uniform sampler2D diffuse;
 
 
 float phong_weightCalc(in vec3 frag_normal, in int lnum) {
-    vec3 light = positions[lnum].xyz - pos;
+    vec4 light = positions[lnum];
     float intensity = intensities[lnum];
 
+    vec3 lightvec;
+    float dist;
+
+    if (light.w > 0.0) {
+        lightvec = light.xyz - pos;
+
+        // Use quadratic attenuation
+        float lengthsq = dot(lightvec, lightvec);
+        intensity /= 1.0 + lengthsq * falloffs[lnum];
+
+        lightvec = normalize(lightvec);
+    } else {
+        lightvec = light.xyz;
+    }
+
     float diffuse = max(0.0, dot(
-        frag_normal, normalize(light)
+        frag_normal, lightvec
     ));
 
-    float dist = intensity / pow(1.0 + length(light), falloffs[lnum]);
-    return diffuse * dist;
+    return diffuse * intensity;
 }
 
 void main (void) {
@@ -166,16 +180,20 @@ class LightingPass(object):
             "Framebuffer is not complete!"
         return self.fbo
 
-    def transform_lights(self, camera, positions):
+    def transform_lights(self, camera, lights):
         out = []
         view_matrix = camera.get_view_matrix()
-        for vec in positions:
-            x, y, z = view_matrix * vec
-            out.append((x, y, z, 0))
+        for l in lights:
+            if isinstance(l, Sunlight):
+                x, y, z = (view_matrix * l.direction).normalized()
+                out.append((x, y, z, 0))
+            else:
+                x, y, z = view_matrix * l.pos
+                out.append((x, y, z, 1))
         return out
 
     def render(self, camera, objects):
-        lights = [o for o in objects if isinstance(o, Light)]
+        lights = [o for o in objects if isinstance(o, BaseLight)]
 
         fbo = self.get_fbo(camera.viewport)
 
@@ -203,9 +221,8 @@ class LightingPass(object):
             lights = lights[8:]
 
             diffuse_lighting.uniform4fv('colours', [l.colour for l in ls])
-#                diffuse_lighting.uniform4fv('positions', [l.pos for l in ls])
             diffuse_lighting.uniform4fv('positions',
-                self.transform_lights(camera, (l.pos for l in ls))
+                self.transform_lights(camera, ls)
             )
             diffuse_lighting.uniform1fv(
                 'intensities', [l.intensity for l in ls])

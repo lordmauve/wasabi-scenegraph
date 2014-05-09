@@ -11,7 +11,8 @@ from wasabisg.plane import Plane
 from wasabisg.scenegraph import Camera, Scene, v3, ModelNode
 from wasabisg.loaders.objloader import ObjFileLoader
 from wasabisg.model import Material
-from wasabisg.lighting import Light
+from wasabisg.lighting import Light, Sunlight
+from wasabisg.fallbackrenderer import FallbackRenderer
 
 
 FPS = 60
@@ -30,21 +31,28 @@ def load():
 
     # Scene
     scene = Scene(
-        ambient=(0.05, 0.05, 0.05, 1.0)
+        ambient=(0.05, 0.05, 0.05, 1.0),
+        renderer=FallbackRenderer()
     )
 
 
 def init_scene():
     """Set up the scene and place objects into it."""
-    # Set up objects in the scene
-    sunlight = Light(
-        pos=(0, 1, 0),
-        colour=(1.0, 1.0, 1.0, 1.0),
-        intensity=15,
-        falloff=0.5
-    )
 
-    scene.add(sunlight)
+    # Add some sun
+    scene.add(Sunlight(
+        direction=(1, 0.5, 1),
+        colour=(1.0, 0.8, 0.5, 1.0),
+        intensity=3,
+    ))
+
+    # Add a magical purple point light
+    scene.add(Light(
+        pos=(0, 1, 0),
+        colour=(1.0, 0.0, 1.0, 1.0),
+        intensity=15,
+        falloff=0.01
+    ))
 
     # Sky dome
     scene.add(
@@ -61,11 +69,11 @@ def init_scene():
     # Ground
     scene.add(
         Plane(
-            divisions=2,
+            divisions=30,
             size=100,
             material=Material(
                 name='ground',
-                Kd=(0.1, 0.5, 0.1),
+                Kd=(0.02, 0.09, 0.02),
                 illum=1
             )
         )

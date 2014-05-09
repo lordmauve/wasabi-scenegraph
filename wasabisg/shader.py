@@ -10,6 +10,7 @@ from itertools import chain
 from contextlib import contextmanager
 
 from OpenGL.GL import *
+from OpenGL.error import GLError
 
 from pyglet.graphics import Group
 from pyglet.image import SolidColorImagePattern
@@ -20,6 +21,10 @@ activeshader = None
 activemtllib = None
 
 white = None
+
+
+class ShaderError(Exception):
+    """The shader could not be compiled."""
 
 
 def flatten(a):
@@ -79,7 +84,10 @@ class Shader(object):
         glShaderSource(shader, ''.join(strings))
 
         # compile the shader
-        glCompileShader(shader)
+        try:
+            glCompileShader(shader)
+        except GLError as e:
+            raise ShaderError(e.description)
 
         temp = c_int(0)
         # retrieve the compile status
