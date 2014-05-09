@@ -218,7 +218,7 @@ class Shader(object):
                         self.uniformi(uniform, *(int(v) for v in value))
                 else:
                     if isinstance(value, numbers.Number):
-                        self.uniformi(uniform, value)
+                        self.uniformf(uniform, value)
                     else:
                         self.uniformf(uniform, *value)
 
@@ -285,15 +285,37 @@ class ShaderGroup(Group):
         ShaderGroup.currentshader = None
 
 
+def _pad(vec, l=4):
+    return tuple(vec[:l]) + (1.0,) * max(0, l - len(vec))
+
+
+def _to_float(v):
+    if isinstance(v, (int, float)):
+        return float(v)
+    return v[0]
+
+
+def clamp(v, low, high):
+    return min(high, max(low, v))
+
+
 class MaterialGroup(Group):
     def __init__(self, material, parent=None):
         self.material = material
         super(MaterialGroup, self).__init__(parent=parent)
 
+    def prepare_material(self, material):
+        out = material.copy()
+        out['Kd'] = _pad(material.get('Kd', (1.0, 1.0, 1.0)), 3)
+        out['Ks'] = _pad(material.get('Ks', (0, 0, 0, 1)))
+        out['Ns'] = clamp(_to_float(material.get('Ns', 0.0)), 1.0, 128.0)
+        out['illum'] = material.get('illum', 1)
+        return out
+
     def set_state(self):
         super(MaterialGroup, self).set_state()
         if activeshader:
-            activeshader.set_material(self.material)
+            activeshader.set_material(self.prepare_material(self.material))
 
     def unset_state(self):
         if activeshader:

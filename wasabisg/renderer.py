@@ -30,31 +30,7 @@ class RenderPass(object):
             self.group.unset_state_recursive()
 
 
-depth_shader = Shader(
-    vert="""
-varying vec2 uv;
-
-void main(void)
-{
-    vec4 a = gl_Vertex;
-    gl_Position = gl_ModelViewProjectionMatrix * a;
-    uv = gl_MultiTexCoord0.st;
-}
-""",
-    frag="""
-
-varying vec2 uv;
-uniform sampler2D diffuse;
-
-void main (void) {
-    gl_FragColor = vec4(0.0, 0.0, 0.0, texture2D(diffuse, uv).a);
-}
-"""
-)
-depth_shader.bind_material_to_texture('map_Kd', 'diffuse')
-
-
-diffuse_lighting = Shader(
+lighting_shader = Shader(
     vert="""
 
 varying vec3 normal;
@@ -84,15 +60,17 @@ uniform vec4 colours[8];
 uniform vec4 positions[8];
 uniform float intensities[8];
 uniform float falloffs[8];
-uniform sampler2D diffuse;
+uniform sampler2D diffuse_tex;
+uniform vec4 specular;
+uniform float specular_exponent;
 
 
-float phong_weightCalc(in vec3 frag_normal, in int lnum) {
+vec3 calc_light(in vec3 frag_normal, in int lnum, in vec3 diffuse) {
     vec4 light = positions[lnum];
     float intensity = intensities[lnum];
+    vec3 light_colour = colours[lnum].rgb;
 
     vec3 lightvec;
-    float dist;
 
     if (light.w > 0.0) {
         lightvec = light.xyz - pos;
@@ -106,29 +84,40 @@ float phong_weightCalc(in vec3 frag_normal, in int lnum) {
         lightvec = light.xyz;
     }
 
-    float diffuse = max(0.0, dot(
+    float diffuse_component = max(0.0, dot(
         frag_normal, lightvec
     ));
 
-    return diffuse * intensity;
+    float specular_component = 0.0;
+    if (diffuse_component > 0.0) {
+        vec3 rlight = reflect(lightvec, frag_normal);
+        vec3 eye = normalize(pos);
+        specular_component = pow(max(0.0, dot(eye, rlight)), specular_exponent);
+    }
+
+    return intensity * light_colour * (
+        diffuse_component * diffuse +
+        specular_component * specular.rgb
+    );
 }
 
 void main (void) {
     int i;
     float weight;
     vec3 n = normalize(normal);
-    vec4 colour = ambient;
-    vec4 mapcolour = texture2D(diffuse, uv);
+    vec3 colour = ambient.rgb;
+    vec4 mapcolour = texture2D(diffuse_tex, uv);
 
     for (i = 0; i < num_lights; i++) {
-        weight = phong_weightCalc(n, i);
-        colour += colours[i] * weight;
+        colour += calc_light(n, i, mapcolour.rgb);
     }
     gl_FragColor = vec4(colour.xyz, mapcolour.a);
 }
 """
 )
-diffuse_lighting.bind_material_to_texture('map_Kd', 'diffuse')
+lighting_shader.bind_material_to_texture('map_Kd', 'diffuse_tex')
+lighting_shader.bind_material_to_uniformf('Ks', 'specular')
+lighting_shader.bind_material_to_uniformf('Ns', 'specular_exponent')
 
 
 class LightingPass(object):
@@ -211,8 +200,8 @@ class LightingPass(object):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         if not lights:
             return
-        diffuse_lighting.bind()
-        diffuse_lighting.uniformf('ambient', *self.ambient)
+        lighting_shader.bind()
+        lighting_shader.uniformf('ambient', *self.ambient)
 
 #            diffuse_lighting.uniform_matrixf('inv_view', camera.get_view_matrix().inverse())
 
@@ -220,15 +209,15 @@ class LightingPass(object):
             ls = lights[:8]
             lights = lights[8:]
 
-            diffuse_lighting.uniform4fv('colours', [l.colour for l in ls])
-            diffuse_lighting.uniform4fv('positions',
+            lighting_shader.uniform4fv('colours', [l.colour for l in ls])
+            lighting_shader.uniform4fv('positions',
                 self.transform_lights(camera, ls)
             )
-            diffuse_lighting.uniform1fv(
+            lighting_shader.uniform1fv(
                 'intensities', [l.intensity for l in ls])
-            diffuse_lighting.uniform1fv(
+            lighting_shader.uniform1fv(
                 'falloffs', [l.falloff for l in ls])
-            diffuse_lighting.uniformi('num_lights', len(ls))
+            lighting_shader.uniformi('num_lights', len(ls))
             for o in objects:
                 if self.filter(o):
                     o.draw(camera)
@@ -238,7 +227,7 @@ class LightingPass(object):
             glDepthMask(GL_FALSE)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE)
 
-        diffuse_lighting.unbind()
+        lighting_shader.unbind()
         glDepthMask(GL_TRUE)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
@@ -268,7 +257,7 @@ varying vec2 uv;
 varying vec4 projuv;
 
 uniform vec3 colour;
-uniform sampler2D diffuse;
+//uniform sampler2D diffuse;
 uniform sampler2D lighting;
 uniform int illum;
 
@@ -280,7 +269,7 @@ const mat4 proj = mat4(
 );
 
 void main (void) {
-    vec4 mapcolour = texture2D(diffuse, uv) * vec4(colour, 1.0);
+    vec4 mapcolour = vec4(colour, 1.0); // * texture2D(diffuse, uv)
     vec4 diffuse = vec4(1.0, 1.0, 1.0, 1.0);
 
     if (illum == 0) {
@@ -295,7 +284,7 @@ void main (void) {
 )
 composite_shader.bind_material_to_uniformf('Kd', 'colour')
 composite_shader.bind_material_to_uniformi('illum', 'illum')
-composite_shader.bind_material_to_texture('map_Kd', 'diffuse')
+#composite_shader.bind_material_to_texture('map_Kd', 'diffuse')
 
 
 class CompositePass(object):

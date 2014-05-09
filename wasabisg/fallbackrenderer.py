@@ -3,6 +3,20 @@ from OpenGL.GL import *
 from .lighting import Light, Sunlight, BaseLight
 
 
+def _pad_v4(*args):
+    return tuple(args[:4]) + (1.0,) * max(0, 4 - len(args))
+
+
+def _to_float(v):
+    if isinstance(v, (int, float)):
+        return v
+    return v[0]
+
+
+def clamp(v, low, high):
+    return min(high, max(low, v))
+
+
 class MaterialGroup(Group):
     def __init__(self, material, parent=None):
         self.material = material
@@ -11,7 +25,9 @@ class MaterialGroup(Group):
         except KeyError:
             self.tex = None
 
-        self.diffuse = material.get('Kd', (1, 1, 1))
+        self.diffuse = _pad_v4(*material.get('Kd', (1.0, 1.0, 1.0)))
+        self.specular = _pad_v4(*material.get('Ks', (0, 0, 0, 1)))
+        self.specular_exponent = clamp(_to_float(material.get('Ns', 0.0)), 0, 128)
         self.illum = material.get('illum', 1)
         super(MaterialGroup, self).__init__(parent=parent)
 
@@ -22,15 +38,19 @@ class MaterialGroup(Group):
             glBindTexture(GL_TEXTURE_2D, self.tex.id)
         if not self.illum:
             glDisable(GL_LIGHTING)
-        glColor3f(*self.diffuse)
+            glColor4fv(self.diffuse)
+        else:
+            glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, self.diffuse)
+            glMaterialfv(GL_FRONT, GL_SPECULAR, self.specular)
+            glMaterialf(GL_FRONT, GL_SHININESS, self.specular_exponent)
 
     def unset_state(self):
         if self.tex:
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, 0)
-        glColor3f(1, 1, 1)
         if not self.illum:
             glEnable(GL_LIGHTING)
+            glColor4f(1, 1, 1, 1)
         super(MaterialGroup, self).unset_state()
 
 
@@ -55,8 +75,7 @@ class FallbackRenderer(object):
 
         glEnable(GL_LIGHTING)
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0)
-        glEnable(GL_COLOR_MATERIAL)
-        glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
+        glDisable(GL_COLOR_MATERIAL)
 
         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, scene.ambient)
 

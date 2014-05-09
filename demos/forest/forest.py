@@ -43,14 +43,14 @@ def init_scene():
     scene.add(Sunlight(
         direction=(1, 0.5, 1),
         colour=(1.0, 0.8, 0.5, 1.0),
-        intensity=3,
+        intensity=0.3,
     ))
 
     # Add a magical purple point light
     scene.add(Light(
         pos=(0, 1, 0),
         colour=(1.0, 0.0, 1.0, 1.0),
-        intensity=15,
+        intensity=1.5,
         falloff=0.01
     ))
 
@@ -73,7 +73,7 @@ def init_scene():
             size=100,
             material=Material(
                 name='ground',
-                Kd=(0.02, 0.09, 0.02),
+                Kd=(0.2, 0.5, 0.2),
                 illum=1
             )
         )
