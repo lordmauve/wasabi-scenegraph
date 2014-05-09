@@ -32,7 +32,7 @@ def load():
     # Scene
     scene = Scene(
         ambient=(0.05, 0.05, 0.05, 1.0),
-        renderer=FallbackRenderer()
+        #renderer=FallbackRenderer()
     )
 
 

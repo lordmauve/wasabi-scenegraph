@@ -192,28 +192,37 @@ class Camera(object):
     This class offers the ability to set up the projection and modelview
     matrixes.
 
+    :param fov: The field of view in the y direction.
+
     """
-    def __init__(self,
+    def __init__(
+            self,
             width=800,
             height=600,
             pos=v3((0, 15, 15)),
             look_at=v3((0, 0, 0)),
-            aspect=1.3333333333,
-            fov=90.0 / 1.333333):
+            fov=67.5,
+            near=1.0,
+            far=10000.0):
         self.viewport = width, height
-        self.aspect = aspect
+        self.aspect = float(width) / height
         self.fov = fov
         self.pos = pos
         self.look_at = look_at
+        self.near = near
+        self.far = far
 
     def eye_vector(self):
         """Get the direction in which the camera is looking."""
         return self.look_at - self.pos
 
-    def set_matrix(self):
+    def set_projection_matrix(self):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(self.fov, self.aspect, 1.0, 10000.0)
+        gluPerspective(self.fov, self.aspect, self.near, self.far)
+
+    def set_matrix(self):
+        self.set_projection_matrix()
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         gluLookAt(*itertools.chain(
@@ -249,3 +258,41 @@ class Camera(object):
         mat = m.inverse() * xlate
         #print mat
         return mat
+
+
+class OrthographicCamera(Camera):
+    """An orthographic camera.
+
+    :param scale: the width of the viewport in world space.
+
+    """
+    def __init__(
+            self,
+            width=800,
+            height=600,
+            pos=v3((0, 15, 15)),
+            look_at=v3((0, 0, 0)),
+            scale=20.0,
+            near=1.0,
+            far=10000.0):
+        self.viewport = width, height
+        self.aspect = float(width) / height
+        self.pos = pos
+        self.look_at = look_at
+        self.near = near
+        self.far = far
+        self.scale = scale
+
+    def bounds(self):
+        hs = 0.5 * self.scale
+        vs = hs / self.aspect
+        l = -hs
+        r = hs
+        b = -vs
+        t = vs
+        return l, r, b, t, self.near, self.far
+
+    def set_projection_matrix(self):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(*self.bounds())

@@ -50,6 +50,8 @@ Then the scene can be rendered::
     c = Camera(
         pos=Point3(0, 1, -20),
         look_at=(0, 1, 0),
+        width=800,  # or whatever size your viewport is
+        height=600
     )
     scene.render(c)
 
@@ -68,7 +70,18 @@ These high-level classes provide the main API for Wasabi Scenegraph.
 .. autoclass:: Scene
     :members:
 
+The camera classes define how the scene is viewed. The ``width`` and ``height``
+parameters should match the viewport into which you are rendering; these are
+used both to calculate the correct aspect ratio and allocate appropriately
+sized offscreen buffers when rendering.
+
 .. autoclass:: Camera
+    :members:
+
+The standard camera applies a perspective. You can alternatively use an
+orthographic camera so that your scene appears 2D or isometric.
+
+.. autoclass:: OrthographicCamera
     :members:
 
 .. autoclass:: ModelNode
