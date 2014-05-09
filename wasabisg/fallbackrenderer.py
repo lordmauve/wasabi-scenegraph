@@ -21,7 +21,7 @@ class MaterialGroup(Group):
     def __init__(self, material, parent=None):
         self.material = material
         try:
-            self.tex = material['tex_Kd']
+            self.tex = material['tex_map_Kd']
         except KeyError:
             self.tex = None
 
@@ -33,7 +33,7 @@ class MaterialGroup(Group):
 
     def set_state(self):
         super(MaterialGroup, self).set_state()
-        if self.tex:
+        if self.tex is not None:
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self.tex.id)
         if not self.illum:
