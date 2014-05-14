@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='wasabi-scenegraph',
-    version='0.2.0',
+    version='0.2.1',
     description="Pure python 3D graphics engine",
     long_description=open('README.rst').read(),
     author='Daniel Pope',
@@ -17,7 +17,7 @@ setup(
     ],
     extras_require={
         'particles': [
-            'lepton>=1.0b2'
+            'wasabi-lepton>=1.0b2'
         ]
     },
     dependency_links=[
