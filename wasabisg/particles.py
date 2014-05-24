@@ -1,4 +1,4 @@
-from pyglet import gl
+from OpenGL.GL import *
 import pyglet.graphics
 
 from lepton import ParticleGroup
@@ -14,7 +14,8 @@ class ParticleSystemNode(object):
     def __init__(self, group=None):
         """Create a particle system with the given pyglet Group."""
         self.system = ParticleSystem()
-        self.group = group
+        self.group = group or ParticleDisplayGroup()
+        self.textures = set()
 
     def update(self, dt):
         self.system.update(dt)
@@ -26,6 +27,7 @@ class ParticleSystemNode(object):
         particlegroup = ParticleGroup(controllers=controllers, system=self.system)
         texturizer = SpriteTexturizer(texture.id)
         particlegroup.renderer = BillboardRenderer(texturizer)
+        self.textures.add(texture)  # hold a reference to this, otherwise it will get deleted
         return particlegroup
 
     def draw(self, camera):
@@ -67,12 +69,11 @@ void main (void) {
 
 class ParticleDisplayGroup(pyglet.graphics.Group):
     def set_state(self):
-        gl.glActiveTexture(gl.GL_TEXTURE0)
-        gl.glAlphaFunc(gl.GL_GREATER, 0.0)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-        gl.glDepthMask(gl.GL_FALSE)
+        glDepthMask(GL_FALSE)
         particle_shader.bind()
+        glActiveTexture(GL_TEXTURE0)
+        particle_shader.uniformi('diffuse', 0)
 
     def unset_state(self):
         particle_shader.unbind()
-        gl.glDepthMask(gl.GL_TRUE)
+        glDepthMask(GL_TRUE)
