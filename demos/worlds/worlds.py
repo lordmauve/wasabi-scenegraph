@@ -48,7 +48,7 @@ def load():
             material=Material(
                 name='earth',
                 map_Kd='earth.png',
-                illum=2,
+                illum=1,
                 Kd=(1, 1, 1),
                 Ks=(1.0, 1.0, 1.0, 0.1),
                 map_Ks='earth_spec.png',
@@ -63,7 +63,7 @@ def load():
                 name='moon',
                 map_Kd='moon.png',
                 Kd=(1, 1, 1),
-                illum=2,
+                illum=1,
             )
         )]
     )
@@ -136,7 +136,7 @@ def update(dt):
 
     sx = SUN_DISTANCE * math.cos(earth_orbit)
     sz = SUN_DISTANCE * math.sin(earth_orbit)
-    sunlight.pos = sx, 0, sz, 0
+    sunlight.pos = sx, 0, sz
 
     c.pos = v3((0, 3, zpos + 10))
 
