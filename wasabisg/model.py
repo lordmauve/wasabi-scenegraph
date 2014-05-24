@@ -35,18 +35,18 @@ class Mesh(object):
         l = len(self.vertices) / 3
 
         data = [
-            ('v3f', self.vertices),
+            ('v3f/static', self.vertices),
         ]
 
         if self.normals:
             assert len(self.normals) == 3 * l, \
                 "len(normals) != len(vertices)"
-            data.append(('n3f', self.normals))
+            data.append(('n3f/static', self.normals))
 
         if self.texcoords:
             assert len(self.texcoords) == 2 * l, \
                 "len(texcoords) != len(vertices)"
-            data.append(('t2f', self.texcoords))
+            data.append(('t2f/static', self.texcoords))
 
         self.list = batch.add_indexed(
             l,

@@ -33,6 +33,8 @@ class Light(BaseLight):
                     attenuation.
 
     """
+    w = 1
+
     def __init__(self,
                  pos=Point3(0, 0, 0),
                  colour=(1, 1, 1, 1),
@@ -62,6 +64,7 @@ class Sunlight(BaseLight):
 
     """
     falloff = 0
+    w = 0
 
     def __init__(self,
                  direction=Vector3(0, 0, 0),
@@ -73,9 +76,9 @@ class Sunlight(BaseLight):
 
     @property
     def direction(self):
-        return self._direction
+        return self._pos
 
     @direction.setter
     def direction(self, direction):
-        self._direction = d = Vector3(*direction[:3])
+        self._pos = d = Vector3(*direction[:3])
         d.normalize()
