@@ -51,7 +51,7 @@ def load():
                 illum=1,
                 Kd=(1, 1, 1),
                 Ks=(1.0, 1.0, 1.0, 0.1),
-                map_Ks='earth_spec.png',
+#                map_Ks='earth_spec.png',
                 Ns=30.0
             )
         )]

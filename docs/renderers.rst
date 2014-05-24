@@ -9,8 +9,8 @@ with Direct3D for example, or a more realistic target would be OpenGL ES).
 Wasabi Scenegraph currently includes two Renderers:
 
 * ``wasabisg.renderer.LightingAccumulationRenderer`` (the default). This
-  renderer uses OpenGL Framebuffer Objects to re-render the scenes in multiple
-  passes to support an arbitrary number of per-pixel lights.
+  renderer uses GLSL shaders to render standard solid objects with per-pixel
+  lighting.
 
     .. image:: _static/lighting-accumulation.png
 

@@ -34,6 +34,18 @@ Contents:
     renderers
 
 
+Screenshots
+===========
+
+From `Bits of Eight <https://www.pyweek.org/e/wasabi-peace/>`_ (a Pyweek 18
+game):
+
+.. image:: _static/bits-of-eight.jpg
+
+From `Warlocks <https://www.pyweek.org/e/wasabi-idli/>`_ (a Pyweek 16 game):
+
+.. image:: _static/warlocks.jpg
+
 Indices and tables
 ==================
 
