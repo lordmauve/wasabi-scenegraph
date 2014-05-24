@@ -60,10 +60,13 @@ uniform vec4 positions[8];
 uniform float intensities[8];
 uniform float falloffs[8];
 uniform sampler2D diffuse_tex;
+uniform vec3 diffuse_colour;
 uniform vec4 specular;
-uniform float specular_exponent;
 uniform vec4 ambient;
-uniform bool add_ambient;
+uniform float dissolve;
+uniform float specular_exponent;
+uniform float transmit;
+uniform int illum;
 
 vec3 calc_light(in vec3 frag_normal, in int lnum, in vec3 diffuse) {
     vec4 light = positions[lnum];
@@ -84,9 +87,10 @@ vec3 calc_light(in vec3 frag_normal, in int lnum, in vec3 diffuse) {
         lightvec = light.xyz;
     }
 
-    float diffuse_component = max(0.0, dot(
+    float diffuse_component = dot(
         frag_normal, lightvec
-    ));
+    );
+    diffuse_component = max(0.0, diffuse_component) - transmit * min(0.0, diffuse_component);
 
     float specular_component = 0.0;
     if (diffuse_component > 0.0) {
@@ -107,21 +111,28 @@ void main (void) {
     vec3 n = normalize(normal);
     vec3 colour = vec3(0, 0, 0);
     vec4 mapcolour = texture2D(diffuse_tex, uv);
+    vec3 basecolour = mapcolour.rgb * diffuse_colour;
 
-    if (add_ambient) {
-        colour += ambient.rgb * mapcolour.rgb;
-    }
+    if (illum == 0) {
+        colour = basecolour;
+    } else {
+        colour += basecolour * ambient.rgb;
 
-    for (i = 0; i < num_lights; i++) {
-        colour += calc_light(n, i, mapcolour.rgb);
+        for (i = 0; i < num_lights; i++) {
+            colour += calc_light(n, i, basecolour);
+        }
     }
-    gl_FragColor = vec4(colour.xyz, mapcolour.a);
+    gl_FragColor = vec4(colour.xyz, mapcolour.a * dissolve);
 }
 """
 )
 lighting_shader.bind_material_to_texture('map_Kd', 'diffuse_tex')
+lighting_shader.bind_material_to_uniformf('Kd', 'diffuse_colour')
 lighting_shader.bind_material_to_uniformf('Ks', 'specular')
 lighting_shader.bind_material_to_uniformf('Ns', 'specular_exponent')
+lighting_shader.bind_material_to_uniformf('d', 'dissolve')
+lighting_shader.bind_material_to_uniformf('transmit', 'transmit')
+lighting_shader.bind_material_to_uniformi('illum', 'illum')
 
 
 class LightingPass(object):
@@ -130,9 +141,6 @@ class LightingPass(object):
         self.currentviewport = None
         self.fbo = None
         self.lightbuf = self.depthbuf = None
-
-    def filter(self, node):
-        return not node.is_transparent()
 
     def get_fbo(self, viewport):
         if viewport == self.currentviewport:
@@ -148,10 +156,10 @@ class LightingPass(object):
 
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
         glBindTexture(GL_TEXTURE_2D, self.lightbuf)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexImage2D(
             GL_TEXTURE_2D, 0, GL_RGBA32F,
             width, height,
@@ -173,71 +181,86 @@ class LightingPass(object):
             "Framebuffer is not complete!"
         return self.fbo
 
-    def transform_lights(self, camera, lights):
-        out = []
-        view_matrix = camera.get_view_matrix()
-        for l in lights:
-            if isinstance(l, Sunlight):
-                x, y, z = (view_matrix * l.direction).normalized()
-                out.append((x, y, z, 0))
-            else:
-                x, y, z = view_matrix * l.pos
-                out.append((x, y, z, 1))
-        return out
-
     def render(self, camera, objects):
         lights = [o for o in objects if isinstance(o, BaseLight)]
+        glPushAttrib(GL_ALL_ATTRIB_BITS)
+        glClear(GL_DEPTH_BUFFER_BIT)
 
-        fbo = self.get_fbo(camera.viewport)
+        standard_objects = []
+        shader_objects = []
+        for o in objects:
+            if o.is_transparent():
+                continue
+            if hasattr(o, 'shader'):
+                shader_objects.append(o)
+            else:
+                standard_objects.append(o)
+        self.render_objects(camera, lights, standard_objects, shader=lighting_shader)
+
+        for o in shader_objects:
+            self.render_objects(camera, lights, [o], shader=o.shader)
+
+        glPopAttrib()
 
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
-        glAlphaFunc(GL_GREATER, 0.9)
+
+    def render_objects(self, camera, lights, objects, shader=lighting_shader):
+        lights = lights[:]
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
         glBlendFunc(GL_SRC_ALPHA, GL_ZERO)
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
 
         # First pass writes depth, so write it with an offset
         glEnable(GL_POLYGON_OFFSET_FILL)
         glPolygonOffset(0.01, 1)
         glDepthMask(GL_TRUE)
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        #glBindFramebuffer(GL_FRAMEBUFFER, fbo)
         if not lights:
             return
-        lighting_shader.bind()
-        lighting_shader.uniformf('ambient', *self.ambient)
-        lighting_shader.uniformi('use_ambient', 1)
 
-#            diffuse_lighting.uniform_matrixf('inv_view', camera.get_view_matrix().inverse())
+        shader.bind()
+        shader.uniformf('ambient', *self.ambient)
+        view_matrix = camera.get_view_matrix()
 
         while lights:
             ls = lights[:8]
             lights = lights[8:]
 
-            lighting_shader.uniform4fv('colours', [l.colour for l in ls])
-            lighting_shader.uniform4fv('positions',
-                self.transform_lights(camera, ls)
-            )
-            lighting_shader.uniform1fv(
+            light_pos = []
+            for l in ls:
+                x, y, z = view_matrix * l._pos
+                light_pos.append((x, y, z, l.w))
+
+            shader.uniform4fv('colours', [l.colour for l in ls])
+            shader.uniform4fv('positions', light_pos)
+            shader.uniform1fv(
                 'intensities', [l.intensity for l in ls])
-            lighting_shader.uniform1fv(
+            shader.uniform1fv(
                 'falloffs', [l.falloff for l in ls])
-            lighting_shader.uniformi('num_lights', len(ls))
+            shader.uniformi('num_lights', len(ls))
             for o in objects:
-                if self.filter(o):
-                    o.draw(camera)
+                o.draw(camera)
+
+            if not lights:
+                break
 
             # Subsequent passes are drawn without writing to the z-buffer
             glDisable(GL_POLYGON_OFFSET_FILL)
             glDepthMask(GL_FALSE)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+            shader.uniformf('ambient', 0, 0, 0, 0)
 
-            # Only add the ambient component on the first pass
-            lighting_shader.uniformi('use_ambient', 0)
-
-        lighting_shader.unbind()
+        shader.unbind()
         glDepthMask(GL_TRUE)
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     def __del__(self):
         if self.fbo:
@@ -268,7 +291,6 @@ uniform vec3 colour;
 uniform sampler2D diffuse;
 uniform sampler2D lighting;
 uniform int illum;
-uniform vec4 ambient;
 
 const mat4 proj = mat4(
     0.5, 0.0, 0.0, 0.0,
@@ -284,7 +306,7 @@ void main (void) {
         gl_FragColor = mapcolour * texture2D(diffuse, uv);
     } else {
         vec4 lighting = texture2DProj(lighting, proj * projuv);
-        gl_FragColor = mapcolour * (lighting + ambient);
+        gl_FragColor = lighting;
     }
 }
 """,
@@ -305,9 +327,6 @@ class CompositePass(object):
     def render(self, camera, objects):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
-        glEnable(GL_ALPHA_TEST)
-        glAlphaFunc(GL_GREATER, 0.9)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         composite_shader.bind()
 
         composite_shader.bind_texture(
@@ -324,10 +343,10 @@ class CompositePass(object):
 class LightingAccumulationRenderer(object):
     def __init__(self):
         self.lighting = LightingPass()
-        self.composite = CompositePass(self.lighting)
+#        self.composite = CompositePass(self.lighting)
         self.passes = [
             self.lighting,
-            self.composite,
+            #self.composite,
             RenderPass(
                 transparency=True
             )
@@ -353,14 +372,16 @@ class LightingAccumulationRenderer(object):
 
     def render(self, scene, camera):
         self.lighting.ambient = scene.ambient
+
+        flags = GL_ALL_ATTRIB_BITS
+        glPushAttrib(flags)
+
         glEnable(GL_TEXTURE_2D)
-        glClearColor(1.0, 0, 0, 0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glDisable(GL_CULL_FACE)
+        glClear(GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_CULL_FACE)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_ALPHA_TEST)
-        glAlphaFunc(GL_GREATER, 0.9)
+        camera.set_matrix()
         for p in self.passes:
-            camera.set_matrix()
             p.render(camera, scene.objects)
+        glPopAttrib()

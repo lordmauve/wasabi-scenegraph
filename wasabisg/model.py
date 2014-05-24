@@ -7,8 +7,8 @@ A mesh consists of some geometry and an associated material.
 A material is a dictionary of parameters, some of which may be textures.
 
 """
-
 from weakref import WeakValueDictionary
+from OpenGL.GL import GL_QUADS, GL_TRIANGLES
 import pyglet
 import pyglet.graphics
 import pyglet.image
@@ -31,22 +31,53 @@ class Mesh(object):
         self.material = material
         self.indices = indices
 
+    def inside_out(self):
+        """Return a copy of this mesh that is inside out.
+
+        Normals will be flipped and vertex winding order reversed.
+
+        """
+        # Flip normals
+        norms = [-c for c in self.normals]
+
+        if self.mode == GL_QUADS:
+            batch = 4
+        elif self.mode == GL_TRIANGLES:
+            batch = 3
+        else:
+            raise ValueError(
+                "Cannot invert mesh with drawing mode %s" % self.mode
+            )
+
+        idxs = []
+        for b in zip(*[iter(self.indices)] * batch):
+            idxs.extend(reversed(b))
+        return Mesh(
+            mode=self.mode,
+            vertices=self.vertices,
+            normals=norms,
+            texcoords=self.texcoords,
+            indices=idxs,
+            material=self.material,
+            name=self.name
+        )
+
     def to_list(self, batch, group=None):
         l = len(self.vertices) / 3
 
         data = [
-            ('v3f', self.vertices),
+            ('v3f/static', self.vertices),
         ]
 
         if self.normals:
             assert len(self.normals) == 3 * l, \
                 "len(normals) != len(vertices)"
-            data.append(('n3f', self.normals))
+            data.append(('n3f/static', self.normals))
 
         if self.texcoords:
             assert len(self.texcoords) == 2 * l, \
                 "len(texcoords) != len(vertices)"
-            data.append(('t2f', self.texcoords))
+            data.append(('t2f/static', self.texcoords))
 
         self.list = batch.add_indexed(
             l,

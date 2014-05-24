@@ -70,6 +70,7 @@ def load():
     stars_model = Model(
         meshes=[Sphere(
             radius=500,
+            inside=True,
             material=Material(
                 name='stars',
                 map_Kd='stars.png',
@@ -86,7 +87,7 @@ def init_scene():
     # Create a scene
     scene = Scene(
         ambient=(0.05, 0.05, 0.05, 1.0),
-        renderer=FallbackRenderer()
+        #renderer=FallbackRenderer()
     )
 
     # Set up objects in the scene

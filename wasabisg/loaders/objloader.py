@@ -8,6 +8,44 @@ from OpenGL.GL import GL_TRIANGLES, GL_QUADS
 ANIMDIR = 'assets/mesh-animations/'
 
 
+def optimise_model(model):
+    """Combine meshes with identical materials.
+
+    This significantly improves drawing performance.
+
+    """
+    from array import array
+    materials = {}
+    meshes_by_mat = {}
+    for m in model.meshes:
+        matid = id(m.material)
+        mode = m.mode
+        materials[matid] = m.material
+        meshes_by_mat.setdefault((mode, matid), []).append(m)
+
+    out = []
+    for (mode, matid), meshes in meshes_by_mat.items():
+        vs = array('f')
+        ns = array('f')
+        uvs = array('f')
+        indices = array('L')
+        for m in meshes:
+            offset = len(vs) // 3
+            vs.extend(m.vertices)
+            ns.extend(m.normals)
+            uvs.extend(m.texcoords)
+            indices.extend(i + offset for i in m.indices)
+        out.append(Mesh(
+            mode=mode,
+            vertices=vs,
+            normals=ns,
+            texcoords=uvs,
+            indices=indices,
+            material=materials[matid]
+        ))
+    model.meshes = out
+
+
 class ObjFileLoader(object):
     """Load models from Wavefront .obj files."""
     def __init__(self):
@@ -125,6 +163,7 @@ class ObjFileLoader(object):
             ))
 
         model = Model(name=filename, meshes=meshes)
+        optimise_model(model)
         return model
 
     def load_model(self, name):
