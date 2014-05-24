@@ -70,6 +70,7 @@ def load():
     stars_model = Model(
         meshes=[Sphere(
             radius=500,
+            inside=True,
             material=Material(
                 name='stars',
                 map_Kd='stars.png',

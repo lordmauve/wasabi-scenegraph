@@ -4,11 +4,18 @@ from OpenGL.GL import GL_TRIANGLES
 
 
 class Sphere(Mesh):
-    """Construct a Mesh that is a 3D UV sphere."""
+    """Construct a Mesh that is a 3D UV sphere.
+
+    If `inside` is given then the normals and vertex winding will be reversed
+    such that the camera will render the inside of the sphere rather than the
+    outside. This is useful for skydomes etc.
+
+    """
 
     def __init__(
             self,
             radius=1,
+            inside=False,
             latitude_divisions=20,
             longitude_divisions=40,
             material=None):
@@ -70,6 +77,11 @@ class Sphere(Mesh):
             material=material,
             name=repr(self)
         )
+
+        if inside:
+            flipped = self.inside_out()
+            self.normals = flipped.normals
+            self.indices = flipped.indices
 
     def __repr__(self):
         return (

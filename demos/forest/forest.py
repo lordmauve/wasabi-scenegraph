@@ -58,6 +58,7 @@ def init_scene():
     scene.add(
         Sphere(
             radius=500,
+            inside=True,
             material=Material(
                 name='sky',
                 Kd=(0.2, 0.2, 0.8),
