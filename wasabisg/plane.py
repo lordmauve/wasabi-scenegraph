@@ -116,10 +116,10 @@ class Plane(Mesh):
         # TODO: Use quad strips and save some index memory
         for j in xrange(divisions):
             for i in xrange(divisions):
-                idx(i, j)
-                idx(i + 1, j)
-                idx(i + 1, j + 1)
                 idx(i, j + 1)
+                idx(i + 1, j + 1)
+                idx(i + 1, j)
+                idx(i, j)
 
         super(Plane, self).__init__(
             GL_QUADS,

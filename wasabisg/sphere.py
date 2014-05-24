@@ -53,11 +53,12 @@ class Sphere(Mesh):
                 j = i + longitude_divisions + 1
 
                 indexes.extend([
-                    i, j,
                     i + 1,
                     j,
+                    i,
+                    i + 1,
                     j + 1,
-                    i + 1
+                    j,
                 ])
 
         super(Sphere, self).__init__(
