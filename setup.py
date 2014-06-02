@@ -29,5 +29,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Operating System :: OS Independent',
         'Topic :: Software Development :: Libraries :: Python Modules'
-    ]
+    ],
+    test_suite='nose.collector'
 )
