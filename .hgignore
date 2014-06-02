@@ -9,3 +9,4 @@ build
 dist
 wasabi.scenegraph.egg-info
 docs/_build
+.ropeproject/
