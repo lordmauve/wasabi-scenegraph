@@ -1,0 +1,12 @@
+Wasabi Scenegraph:
+
+Daniel Pope
+James Goppert
+
+
+Original shaders code (c) Tristam Macdonald
+http://swiftcoder.wordpress.com/2008/12/19/simple-glsl-wrapper-for-pyglet/
+License: http://www.boost.org/LICENSE_1_0.txt
+
+Thanks to Florian Boesch for gletools (though now no longer required)
+
