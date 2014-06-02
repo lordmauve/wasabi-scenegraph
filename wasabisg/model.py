@@ -9,6 +9,7 @@ A material is a dictionary of parameters, some of which may be textures.
 """
 from weakref import WeakValueDictionary
 from OpenGL.GL import GL_QUADS, GL_TRIANGLES
+from copy import copy
 import pyglet
 import pyglet.graphics
 import pyglet.image
@@ -89,6 +90,13 @@ class Mesh(object):
 
         return self.list
 
+    def copy(self):
+        """Create a copy of this mesh, eg. to apply a different material."""
+        # TODO: share VBOs with original
+        m = copy(self)
+        del m.list
+        return m
+
     def __repr__(self):
         return '<Mesh %s>' % self.name
 
@@ -98,25 +106,19 @@ class Model(object):
         self.name = name
         self.group = None
 
-        self.meshes = []
         self.materials = {}
         self.meshes = meshes
 
     def copy(self):
-        """Create a copy of the model that shares vertex data only.
+        """Create a copy of the model that shares vertex data.
 
-        This allows eg. texture maps to be redefined.
+        This allows materials to be redefined.
+
         """
-        # Some parts of this are renderer-specific
-        m = Model()
-        m.name = self.name
-        m.group = self.group
-        m.batch = self.batch
-        m.meshes = [
-            (name, l, mtl.copy())
-            for name, l, mtl in self.meshes
-        ]
-        return m
+        return Model(
+            meshes=[m.copy() for m in self.meshes],
+            name=self.name
+        )
 
     def update(self, dt):
         pass

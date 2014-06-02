@@ -1,0 +1,20 @@
+# Blender MTL File: 'robot.blend'
+# Material Count: 2
+
+newmtl Material
+Ns 1.960784
+Ka 0.000000 0.000000 0.000000
+Kd 0.248650 0.248650 0.248650
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+
+newmtl VisorMaterial
+Ns 88.235294
+Ka 0.000000 0.000000 0.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.767081 0.767081 0.767081
+Ni 1.000000
+d 1.000000
+illum 2
