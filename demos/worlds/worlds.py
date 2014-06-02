@@ -153,6 +153,15 @@ def on_draw():
 
 
 if __name__ == '__main__':
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option(
+        '-s', '--screenshot',
+        metavar='FILE',
+        help='Write screenshot to FILE'
+    )
+    options, _ = parser.parse_args()
+
     window = pyglet.window.Window(
         width=WIDTH,
         height=HEIGHT
@@ -161,6 +170,14 @@ if __name__ == '__main__':
     load()
     init_scene()
 
-    window.event(on_draw)
-    pyglet.clock.schedule_interval(update, 1.0 / FPS)
-    pyglet.app.run()
+    if options.screenshot:
+        update(0)
+        on_draw()
+        image = pyglet.image.ColorBufferImage(
+            0, 0, window.width, window.height
+        )
+        image.save(options.screenshot)
+    else:
+        window.event(on_draw)
+        pyglet.clock.schedule_interval(update, 1.0 / FPS)
+        pyglet.app.run()

@@ -1,6 +1,10 @@
 import math
-from nose.tools import eq_
-from scenegraph.scenegraph import Matrix4, v3, Camera
+from wasabisg.scenegraph import Matrix4, v3, Camera
+
+
+def vec_eq(a, b):
+    """Return True if vectors a and b are approximately equal."""
+    return (a - b).magnitude_squared() < 1e-6
 
 
 point = v3(2, 1, 0)
@@ -15,7 +19,7 @@ def test_zaligned():
     camera = Camera(
         pos=v3(0, 0, 20)
     )
-    eq_(project(point, camera), v3(2, 1, -20))
+    vec_eq(project(point, camera), v3(2, 1, -20))
 
 
 def test_xaligned():
@@ -23,7 +27,7 @@ def test_xaligned():
     camera = Camera(
         pos=v3(20, 0, 0)
     )
-    eq_(project(point, camera), v3(0, 1, -18))
+    vec_eq(project(point, camera), v3(0, 1, -18))
 
 
 def test_minusxaligned():
@@ -31,7 +35,7 @@ def test_minusxaligned():
     camera = Camera(
         pos=v3(-20, 0, 0)
     )
-    eq_(project(point, camera), v3(0, 1, -22))
+    vec_eq(project(point, camera), v3(0, 1, -22))
 
 
 def test_airborne():
@@ -41,5 +45,5 @@ def test_airborne():
         pos=v3(2, 10 * root2, 10 * root2),
         look_at=v3(2, 0, 0)
     )
-    eq_(project(point, camera), v3(0, 0.5 * root2, 0.5 * root2 - 20))
+    vec_eq(project(point, camera), v3(0, 0.5 * root2, 0.5 * root2 - 20))
 
